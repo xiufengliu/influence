@@ -18,7 +18,7 @@ experiments = [
     "computational_analysis"
 ]
 influence_methods = ["shap", "lime", "spearman"]
-clustering_algorithms = ["kmeans", "hierarchical", "spectral"]
+clustering_algorithms = ["kmeans", "hierarchical"]  # Removed "spectral" as it's causing hanging issues
 n_clusters_list = [3, 5]
 random_seeds = [42]
 output_dir = Path("data/results/test_tnnls_real_datasets")
