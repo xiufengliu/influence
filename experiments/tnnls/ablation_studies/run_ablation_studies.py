@@ -34,7 +34,7 @@ from src.utils.visualization import visualize_clusters
 
 
 def run_influence_space_ablation(dataset_name, clustering_algorithm, n_clusters,
-                                random_seed, output_dir):
+                                random_seed, output_dir, influence_methods=None):
     """
     Run ablation study on the impact of influence space.
 
@@ -50,6 +50,8 @@ def run_influence_space_ablation(dataset_name, clustering_algorithm, n_clusters,
         Random seed for reproducibility.
     output_dir : str or Path
         Directory to save results.
+    influence_methods : list, default=None
+        List of influence methods to use. If None, uses all methods.
 
     Returns
     -------
@@ -84,25 +86,47 @@ def run_influence_space_ablation(dataset_name, clustering_algorithm, n_clusters,
         # Generate influence spaces
         influence_spaces = {}
 
-        # Raw feature space
+        # Raw feature space (always include)
         influence_spaces["raw"] = X
 
-        # SHAP influence space
-        influence_params = config.INFLUENCE_PARAMS["shap"].copy()
-        influence_params["random_state"] = random_seed
-        shap_generator = ShapInfluence(**influence_params)
-        influence_spaces["shap"] = shap_generator.generate_influence(model, X)
+        # If influence_methods is None, use all methods
+        if influence_methods is None:
+            influence_methods = ["shap", "lime", "spearman"]
 
-        # LIME influence space
-        influence_params = config.INFLUENCE_PARAMS["lime"].copy()
-        influence_params["random_state"] = random_seed
-        lime_generator = LimeInfluence(**influence_params)
-        influence_spaces["lime"] = lime_generator.generate_influence(model, X)
+        logger.info(f"Using influence methods: {influence_methods}")
 
-        # Spearman influence space
-        influence_params = config.INFLUENCE_PARAMS["spearman"].copy()
-        spearman_generator = SpearmanInfluence(**influence_params)
-        influence_spaces["spearman"] = spearman_generator.generate_influence(model, X)
+        # Generate only the specified influence spaces
+        if "shap" in influence_methods:
+            try:
+                logger.info("Generating SHAP influence space...")
+                influence_params = config.INFLUENCE_PARAMS["shap"].copy()
+                influence_params["random_state"] = random_seed
+                shap_generator = ShapInfluence(**influence_params)
+                influence_spaces["shap"] = shap_generator.generate_influence(model, X)
+                logger.info("SHAP influence space generated successfully")
+            except Exception as e:
+                logger.error(f"Error generating SHAP influence space: {e}")
+
+        if "lime" in influence_methods:
+            try:
+                logger.info("Generating LIME influence space...")
+                influence_params = config.INFLUENCE_PARAMS["lime"].copy()
+                influence_params["random_state"] = random_seed
+                lime_generator = LimeInfluence(**influence_params)
+                influence_spaces["lime"] = lime_generator.generate_influence(model, X)
+                logger.info("LIME influence space generated successfully")
+            except Exception as e:
+                logger.error(f"Error generating LIME influence space: {e}")
+
+        if "spearman" in influence_methods:
+            try:
+                logger.info("Generating Spearman influence space...")
+                influence_params = config.INFLUENCE_PARAMS["spearman"].copy()
+                spearman_generator = SpearmanInfluence(**influence_params)
+                influence_spaces["spearman"] = spearman_generator.generate_influence(model, X)
+                logger.info("Spearman influence space generated successfully")
+            except Exception as e:
+                logger.error(f"Error generating Spearman influence space: {e}")
 
         # Perform clustering and evaluation for each influence space
         results = []
@@ -557,7 +581,8 @@ def run_ablation_studies(datasets, influence_methods, clustering_algorithms,
                         "clustering_algorithm": clustering_algorithm,
                         "n_clusters": n_clusters,
                         "random_seed": random_seed,
-                        "output_dir": influence_dir
+                        "output_dir": influence_dir,
+                        "influence_methods": influence_methods  # Pass the influence methods
                     })
 
     logger.info(f"Running {len(influence_experiments)} influence space experiments...")
