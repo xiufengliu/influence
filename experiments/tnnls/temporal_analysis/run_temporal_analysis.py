@@ -60,6 +60,10 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
     dict
         Dictionary containing experiment results.
     """
+    # Import clustering algorithms here to avoid circular imports
+    from src.clustering.hierarchical import HierarchicalClustering
+    from src.clustering.spectral import SpectralClustering
+
     # Set up logging
     logger = logging.getLogger(f"temporal_analysis_{dataset_name}_{influence_method}_{clustering_algorithm}")
 
@@ -453,73 +457,89 @@ def create_transition_visualizations(results, output_dir):
     output_dir : str or Path
         Directory to save visualizations.
     """
+    # Set up logging
+    logger = logging.getLogger("transition_visualizations")
+
     # Create visualizations directory
     vis_dir = Path(output_dir) / "transition_visualizations"
     vis_dir.mkdir(exist_ok=True)
 
     # Process each result
     for result in results:
-        # Skip error results
-        if "error" in result and result["error"] is not None:
-            continue
+        try:
+            # Skip error results
+            if "error" in result and result["error"] is not None:
+                continue
 
-        # Skip if no transition matrix
-        if "transition_matrix" not in result:
-            continue
+            # Skip if no transition matrix
+            if "transition_matrix" not in result:
+                continue
 
-        # Extract info
-        dataset = result["dataset"]
-        influence_method = result["influence_method"]
-        clustering_algorithm = result["clustering_algorithm"]
-        n_clusters = result["n_clusters"]
-        random_seed = result["random_seed"]
+            # Extract info
+            dataset = result["dataset"]
+            influence_method = result["influence_method"]
+            clustering_algorithm = result["clustering_algorithm"]
+            n_clusters = result["n_clusters"]
+            random_seed = result["random_seed"]
 
-        # Create experiment name
-        exp_name = f"{dataset}_{influence_method}_{clustering_algorithm}_{n_clusters}_{random_seed}"
+            # Create experiment name
+            exp_name = f"{dataset}_{influence_method}_{clustering_algorithm}_{n_clusters}_{random_seed}"
 
-        # Extract transition matrix
-        P = np.array(result["transition_matrix"])
+            # Extract transition matrix
+            P = np.array(result["transition_matrix"])
 
-        # Create heatmap
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(P, annot=True, cmap="YlGnBu", fmt=".3f")
-        plt.title(f"Transition Matrix: {dataset}, {influence_method}, {clustering_algorithm}")
-        plt.xlabel("To Cluster")
-        plt.ylabel("From Cluster")
-        plt.tight_layout()
-        plt.savefig(vis_dir / f"{exp_name}_transition_heatmap.pdf", format='pdf')
-        plt.close()
+            # Check if we have a single-cluster case (1x1 matrix)
+            if P.shape[0] <= 1 or P.shape[1] <= 1:
+                logger.warning(f"Skipping transition visualization for {exp_name} - only one cluster found")
+                continue
 
-        # Create network diagram
-        plt.figure(figsize=(10, 8))
+            # Create heatmap
+            plt.figure(figsize=(10, 8))
+            sns.heatmap(P, annot=True, cmap="YlGnBu", fmt=".3f")
+            plt.title(f"Transition Matrix: {dataset}, {influence_method}, {clustering_algorithm}")
+            plt.xlabel("To Cluster")
+            plt.ylabel("From Cluster")
+            plt.tight_layout()
+            plt.savefig(vis_dir / f"{exp_name}_transition_heatmap.pdf", format='pdf')
+            plt.close()
 
-        # Create positions for nodes in a circle
-        pos = {}
-        for i in range(n_clusters):
-            angle = 2 * np.pi * i / n_clusters
-            pos[i] = (np.cos(angle), np.sin(angle))
+            # Create network diagram
+            plt.figure(figsize=(10, 8))
 
-        # Draw nodes
-        for i in range(n_clusters):
-            plt.plot(pos[i][0], pos[i][1], 'o', markersize=20,
-                     color=plt.cm.tab10(i % 10))
-            plt.text(pos[i][0], pos[i][1], str(i),
-                     horizontalalignment='center', verticalalignment='center')
+            # Get actual number of clusters from the transition matrix
+            actual_n_clusters = P.shape[0]
 
-        # Draw edges
-        for i in range(n_clusters):
-            for j in range(n_clusters):
-                if P[i, j] > 0.1:  # Only draw significant transitions
-                    plt.arrow(pos[i][0], pos[i][1],
-                              0.8 * (pos[j][0] - pos[i][0]),
-                              0.8 * (pos[j][1] - pos[i][1]),
-                              head_width=0.05, head_length=0.1,
-                              fc=plt.cm.Blues(P[i, j]), ec=plt.cm.Blues(P[i, j]),
-                              alpha=P[i, j])
+            # Create positions for nodes in a circle
+            pos = {}
+            for i in range(actual_n_clusters):
+                angle = 2 * np.pi * i / actual_n_clusters
+                pos[i] = (np.cos(angle), np.sin(angle))
 
-        plt.title(f"Transition Network: {dataset}, {influence_method}, {clustering_algorithm}")
-        plt.axis('equal')
-        plt.axis('off')
-        plt.tight_layout()
-        plt.savefig(vis_dir / f"{exp_name}_transition_network.pdf", format='pdf')
-        plt.close()
+            # Draw nodes
+            for i in range(actual_n_clusters):
+                plt.plot(pos[i][0], pos[i][1], 'o', markersize=20,
+                        color=plt.cm.tab10(i % 10))
+                plt.text(pos[i][0], pos[i][1], str(i),
+                        horizontalalignment='center', verticalalignment='center')
+
+            # Draw edges
+            for i in range(actual_n_clusters):
+                for j in range(actual_n_clusters):
+                    if P[i, j] > 0.1:  # Only draw significant transitions
+                        plt.arrow(pos[i][0], pos[i][1],
+                                0.8 * (pos[j][0] - pos[i][0]),
+                                0.8 * (pos[j][1] - pos[i][1]),
+                                head_width=0.05, head_length=0.1,
+                                fc=plt.cm.Blues(P[i, j]), ec=plt.cm.Blues(P[i, j]),
+                                alpha=P[i, j])
+
+            plt.title(f"Transition Network: {dataset}, {influence_method}, {clustering_algorithm}")
+            plt.axis('equal')
+            plt.axis('off')
+            plt.tight_layout()
+            plt.savefig(vis_dir / f"{exp_name}_transition_network.pdf", format='pdf')
+            plt.close()
+
+        except Exception as e:
+            logger.error(f"Error creating transition visualization: {e}")
+            plt.close()  # Make sure to close any open figures
