@@ -553,7 +553,7 @@ def run_ablation_studies(datasets, influence_methods, clustering_algorithms,
             for n_clusters in n_clusters_list:
                 for random_seed in random_seeds:
                     influence_experiments.append({
-                        "dataset": dataset,
+                        "dataset_name": dataset,  # Changed from "dataset" to "dataset_name" to match function parameter
                         "clustering_algorithm": clustering_algorithm,
                         "n_clusters": n_clusters,
                         "random_seed": random_seed,
