@@ -32,7 +32,7 @@ from src.utils.logger import setup_logger
 from src.utils.visualization import visualize_clusters, visualize_transitions, visualize_temporal_evolution
 
 
-def run_pattern_discovery_case_study(dataset_name, output_dir):
+def run_pattern_discovery_case_study(dataset_name, influence_method, output_dir):
     """
     Run pattern discovery case study.
 
@@ -40,6 +40,8 @@ def run_pattern_discovery_case_study(dataset_name, output_dir):
     ----------
     dataset_name : str
         Name of the dataset to use.
+    influence_method : str
+        Influence method to use (shap, lime, or spearman).
     output_dir : str or Path
         Directory to save results.
 
@@ -65,10 +67,22 @@ def run_pattern_discovery_case_study(dataset_name, output_dir):
         model = GradientBoostModel(**model_params)
         model.fit(X, y)
 
-        # Generate influence space using SHAP
-        influence_params = config.INFLUENCE_PARAMS["shap"].copy()
-        influence_generator = ShapInfluence(**influence_params)
+        # Generate influence space using the specified method
+        if influence_method == "shap":
+            influence_params = config.INFLUENCE_PARAMS["shap"].copy()
+            influence_generator = ShapInfluence(**influence_params)
+        elif influence_method == "lime":
+            from src.influence.lime_influence import LimeInfluence
+            influence_params = config.INFLUENCE_PARAMS["lime"].copy()
+            influence_generator = LimeInfluence(**influence_params)
+        else:  # spearman
+            from src.influence.spearman_influence import SpearmanInfluence
+            influence_params = config.INFLUENCE_PARAMS["spearman"].copy()
+            influence_generator = SpearmanInfluence(**influence_params)
+
+        logger.info(f"Generating influence space using {influence_method}...")
         Z = influence_generator.generate_influence(model, X)
+        logger.info(f"Influence space generated successfully")
 
         # Perform clustering with different numbers of clusters
         n_clusters_list = [3, 5, 7]
@@ -182,7 +196,7 @@ def run_pattern_discovery_case_study(dataset_name, output_dir):
         }
 
 
-def run_transition_analysis_case_study(dataset_name, output_dir):
+def run_transition_analysis_case_study(dataset_name, influence_method, output_dir):
     """
     Run transition analysis case study.
 
@@ -190,6 +204,8 @@ def run_transition_analysis_case_study(dataset_name, output_dir):
     ----------
     dataset_name : str
         Name of the dataset to use.
+    influence_method : str
+        Influence method to use (shap, lime, or spearman).
     output_dir : str or Path
         Directory to save results.
 
@@ -212,10 +228,22 @@ def run_transition_analysis_case_study(dataset_name, output_dir):
         model = GradientBoostModel(**model_params)
         model.fit(X, y)
 
-        # Generate influence space using SHAP
-        influence_params = config.INFLUENCE_PARAMS["shap"].copy()
-        influence_generator = ShapInfluence(**influence_params)
+        # Generate influence space using the specified method
+        if influence_method == "shap":
+            influence_params = config.INFLUENCE_PARAMS["shap"].copy()
+            influence_generator = ShapInfluence(**influence_params)
+        elif influence_method == "lime":
+            from src.influence.lime_influence import LimeInfluence
+            influence_params = config.INFLUENCE_PARAMS["lime"].copy()
+            influence_generator = LimeInfluence(**influence_params)
+        else:  # spearman
+            from src.influence.spearman_influence import SpearmanInfluence
+            influence_params = config.INFLUENCE_PARAMS["spearman"].copy()
+            influence_generator = SpearmanInfluence(**influence_params)
+
+        logger.info(f"Generating influence space using {influence_method}...")
         Z = influence_generator.generate_influence(model, X)
+        logger.info(f"Influence space generated successfully")
 
         # Perform clustering
         n_clusters = 5  # Use 5 clusters for detailed transition analysis
@@ -340,7 +368,7 @@ def run_transition_analysis_case_study(dataset_name, output_dir):
         }
 
 
-def run_anomaly_detection_case_study(dataset_name, output_dir):
+def run_anomaly_detection_case_study(dataset_name, influence_method, output_dir):
     """
     Run anomaly detection case study.
 
@@ -348,6 +376,8 @@ def run_anomaly_detection_case_study(dataset_name, output_dir):
     ----------
     dataset_name : str
         Name of the dataset to use.
+    influence_method : str
+        Influence method to use (shap, lime, or spearman).
     output_dir : str or Path
         Directory to save results.
 
@@ -370,10 +400,22 @@ def run_anomaly_detection_case_study(dataset_name, output_dir):
         model = GradientBoostModel(**model_params)
         model.fit(X, y)
 
-        # Generate influence space using SHAP
-        influence_params = config.INFLUENCE_PARAMS["shap"].copy()
-        influence_generator = ShapInfluence(**influence_params)
+        # Generate influence space using the specified method
+        if influence_method == "shap":
+            influence_params = config.INFLUENCE_PARAMS["shap"].copy()
+            influence_generator = ShapInfluence(**influence_params)
+        elif influence_method == "lime":
+            from src.influence.lime_influence import LimeInfluence
+            influence_params = config.INFLUENCE_PARAMS["lime"].copy()
+            influence_generator = LimeInfluence(**influence_params)
+        else:  # spearman
+            from src.influence.spearman_influence import SpearmanInfluence
+            influence_params = config.INFLUENCE_PARAMS["spearman"].copy()
+            influence_generator = SpearmanInfluence(**influence_params)
+
+        logger.info(f"Generating influence space using {influence_method}...")
         Z = influence_generator.generate_influence(model, X)
+        logger.info(f"Influence space generated successfully")
 
         # Perform clustering
         n_clusters = 5
@@ -550,9 +592,13 @@ def run_case_studies(datasets, influence_methods, clustering_algorithms,
     logger.info("Running pattern discovery case studies...")
     pattern_results = {}
 
+    # Use only the first influence method to avoid memory issues
+    influence_method = influence_methods[0]
+    logger.info(f"Using influence method: {influence_method}")
+
     for dataset in datasets:
-        logger.info(f"Running pattern discovery case study for {dataset}...")
-        pattern_result = run_pattern_discovery_case_study(dataset, output_dir)
+        logger.info(f"Running pattern discovery case study for {dataset} with {influence_method}...")
+        pattern_result = run_pattern_discovery_case_study(dataset, influence_method, output_dir)
         pattern_results[dataset] = pattern_result
 
     # Run transition analysis case studies
@@ -560,8 +606,8 @@ def run_case_studies(datasets, influence_methods, clustering_algorithms,
     transition_results = {}
 
     for dataset in datasets:
-        logger.info(f"Running transition analysis case study for {dataset}...")
-        transition_result = run_transition_analysis_case_study(dataset, output_dir)
+        logger.info(f"Running transition analysis case study for {dataset} with {influence_method}...")
+        transition_result = run_transition_analysis_case_study(dataset, influence_method, output_dir)
         transition_results[dataset] = transition_result
 
     # Run anomaly detection case studies
@@ -569,8 +615,8 @@ def run_case_studies(datasets, influence_methods, clustering_algorithms,
     anomaly_results = {}
 
     for dataset in datasets:
-        logger.info(f"Running anomaly detection case study for {dataset}...")
-        anomaly_result = run_anomaly_detection_case_study(dataset, output_dir)
+        logger.info(f"Running anomaly detection case study for {dataset} with {influence_method}...")
+        anomaly_result = run_anomaly_detection_case_study(dataset, influence_method, output_dir)
         anomaly_results[dataset] = anomaly_result
 
     # Create summary report
