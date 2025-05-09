@@ -292,9 +292,15 @@ def run_contextual_coherence(datasets, influence_methods, clustering_algorithms,
 
     logger.info(f"Running {len(experiments)} experiments...")
 
-    # Run experiments in parallel
+    # Run experiments in parallel with optimized settings
     start_time = time.time()
-    results = Parallel(n_jobs=n_jobs, verbose=10 if verbose else 0)(
+    results = Parallel(
+        n_jobs=n_jobs,
+        verbose=10 if verbose else 0,
+        batch_size="auto",
+        pre_dispatch="2*n_jobs",
+        max_nbytes="100M"  # Increase memory limit for better performance
+    )(
         delayed(run_single_experiment)(**exp) for exp in experiments
     )
 

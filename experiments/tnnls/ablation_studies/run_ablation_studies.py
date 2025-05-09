@@ -562,7 +562,13 @@ def run_ablation_studies(datasets, influence_methods, clustering_algorithms,
 
     logger.info(f"Running {len(influence_experiments)} influence space experiments...")
 
-    influence_results = Parallel(n_jobs=n_jobs, verbose=10 if verbose else 0)(
+    influence_results = Parallel(
+        n_jobs=n_jobs,
+        verbose=10 if verbose else 0,
+        batch_size="auto",
+        pre_dispatch="2*n_jobs",
+        max_nbytes="100M"  # Increase memory limit for better performance
+    )(
         delayed(run_influence_space_ablation)(**exp) for exp in influence_experiments
     )
 
@@ -598,7 +604,13 @@ def run_ablation_studies(datasets, influence_methods, clustering_algorithms,
 
     logger.info(f"Running {len(temporal_experiments)} temporal integration experiments...")
 
-    temporal_results = Parallel(n_jobs=n_jobs, verbose=10 if verbose else 0)(
+    temporal_results = Parallel(
+        n_jobs=n_jobs,
+        verbose=10 if verbose else 0,
+        batch_size="auto",
+        pre_dispatch="2*n_jobs",
+        max_nbytes="100M"  # Increase memory limit for better performance
+    )(
         delayed(run_temporal_integration_ablation)(**exp) for exp in temporal_experiments
     )
 
@@ -634,7 +646,13 @@ def run_ablation_studies(datasets, influence_methods, clustering_algorithms,
 
     logger.info(f"Running {len(contextual_experiments)} contextual alignment experiments...")
 
-    contextual_results = Parallel(n_jobs=n_jobs, verbose=10 if verbose else 0)(
+    contextual_results = Parallel(
+        n_jobs=n_jobs,
+        verbose=10 if verbose else 0,
+        batch_size="auto",
+        pre_dispatch="2*n_jobs",
+        max_nbytes="100M"  # Increase memory limit for better performance
+    )(
         delayed(run_contextual_alignment_ablation)(**exp) for exp in contextual_experiments
     )
 
