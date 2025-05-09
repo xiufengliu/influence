@@ -57,6 +57,10 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
     dict
         Dictionary containing experiment results.
     """
+    # Import clustering algorithms here to avoid circular imports
+    from src.clustering.hierarchical import HierarchicalClustering
+    from src.clustering.spectral import SpectralClustering
+
     # Set up logging
     logger = logging.getLogger(f"contextual_coherence_{dataset_name}_{influence_method}_{clustering_algorithm}")
 
