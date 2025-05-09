@@ -46,3 +46,34 @@ Thumbs.db
 data/results/
 *.log
 *.png
+*.pdf
+
+# Temporary files
+*.bak
+*.tmp
+*.temp
+.*.swp
+.*.swo
+*~
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# pytest
+.pytest_cache/
+.pytest_report/
+
+# mypy
+.mypy_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/

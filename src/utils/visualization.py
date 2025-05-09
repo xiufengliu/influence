@@ -14,7 +14,7 @@ from sklearn.manifold import TSNE
 def visualize_clusters(Z, labels, output_path=None, method='pca', figsize=(10, 8)):
     """
     Visualize clusters in the influence space.
-    
+
     Parameters
     ----------
     Z : numpy.ndarray
@@ -27,7 +27,7 @@ def visualize_clusters(Z, labels, output_path=None, method='pca', figsize=(10, 8
         Dimensionality reduction method. Options: 'pca', 'tsne'.
     figsize : tuple, default=(10, 8)
         Figure size.
-        
+
     Returns
     -------
     matplotlib.figure.Figure
@@ -35,10 +35,10 @@ def visualize_clusters(Z, labels, output_path=None, method='pca', figsize=(10, 8
     """
     logger = logging.getLogger(__name__)
     logger.info(f"Visualizing clusters using {method}...")
-    
+
     # Create figure
     fig, ax = plt.subplots(figsize=figsize)
-    
+
     # Apply dimensionality reduction
     if Z.shape[1] > 2:
         if method == 'pca':
@@ -48,15 +48,15 @@ def visualize_clusters(Z, labels, output_path=None, method='pca', figsize=(10, 8
         else:
             logger.warning(f"Unknown method: {method}. Using PCA instead.")
             reducer = PCA(n_components=2, random_state=42)
-        
+
         Z_2d = reducer.fit_transform(Z)
     else:
         Z_2d = Z
-    
+
     # Plot clusters
     unique_labels = np.unique(labels)
     colors = plt.cm.tab10(np.linspace(0, 1, len(unique_labels)))
-    
+
     for i, label in enumerate(unique_labels):
         mask = labels == label
         ax.scatter(
@@ -64,36 +64,41 @@ def visualize_clusters(Z, labels, output_path=None, method='pca', figsize=(10, 8
             c=[colors[i]], label=f'Cluster {label}',
             alpha=0.7, edgecolors='w', linewidth=0.5
         )
-    
+
     # Add legend and labels
     ax.legend()
     ax.set_title(f'Cluster Visualization ({method.upper()})')
     ax.set_xlabel(f'{method.upper()} Component 1')
     ax.set_ylabel(f'{method.upper()} Component 2')
-    
+
     # Add grid
     ax.grid(True, linestyle='--', alpha=0.7)
-    
+
     # Tight layout
     plt.tight_layout()
-    
+
     # Save or display
     if output_path is not None:
         # Create directory if it doesn't exist
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+
+        # Change file extension to pdf if it's png
+        output_path_str = str(output_path)
+        if output_path_str.endswith('.png'):
+            output_path = output_path_str.replace('.png', '.pdf')
+
+        plt.savefig(output_path, format='pdf', bbox_inches='tight')
         logger.info(f"Cluster visualization saved to {output_path}")
     else:
         plt.show()
-    
+
     return fig
 
 
 def visualize_transitions(transition_matrix, output_path=None, figsize=(10, 8)):
     """
     Visualize the transition matrix as a heatmap.
-    
+
     Parameters
     ----------
     transition_matrix : numpy.ndarray
@@ -102,7 +107,7 @@ def visualize_transitions(transition_matrix, output_path=None, figsize=(10, 8)):
         Path to save the visualization. If None, displays the plot.
     figsize : tuple, default=(10, 8)
         Figure size.
-        
+
     Returns
     -------
     matplotlib.figure.Figure
@@ -110,10 +115,10 @@ def visualize_transitions(transition_matrix, output_path=None, figsize=(10, 8)):
     """
     logger = logging.getLogger(__name__)
     logger.info("Visualizing transition matrix...")
-    
+
     # Create figure
     fig, ax = plt.subplots(figsize=figsize)
-    
+
     # Create heatmap
     sns.heatmap(
         transition_matrix,
@@ -123,32 +128,37 @@ def visualize_transitions(transition_matrix, output_path=None, figsize=(10, 8)):
         linewidths=0.5,
         ax=ax
     )
-    
+
     # Add labels
     ax.set_title('Cluster Transition Matrix')
     ax.set_xlabel('To Cluster')
     ax.set_ylabel('From Cluster')
-    
+
     # Tight layout
     plt.tight_layout()
-    
+
     # Save or display
     if output_path is not None:
         # Create directory if it doesn't exist
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+
+        # Change file extension to pdf if it's png
+        output_path_str = str(output_path)
+        if output_path_str.endswith('.png'):
+            output_path = output_path_str.replace('.png', '.pdf')
+
+        plt.savefig(output_path, format='pdf', bbox_inches='tight')
         logger.info(f"Transition matrix visualization saved to {output_path}")
     else:
         plt.show()
-    
+
     return fig
 
 
 def visualize_influence_distribution(Z, feature_names=None, output_path=None, figsize=(12, 10)):
     """
     Visualize the distribution of influence scores for each feature.
-    
+
     Parameters
     ----------
     Z : numpy.ndarray
@@ -159,7 +169,7 @@ def visualize_influence_distribution(Z, feature_names=None, output_path=None, fi
         Path to save the visualization. If None, displays the plot.
     figsize : tuple, default=(12, 10)
         Figure size.
-        
+
     Returns
     -------
     matplotlib.figure.Figure
@@ -167,46 +177,46 @@ def visualize_influence_distribution(Z, feature_names=None, output_path=None, fi
     """
     logger = logging.getLogger(__name__)
     logger.info("Visualizing influence distribution...")
-    
+
     # Set feature names if not provided
     if feature_names is None:
         feature_names = [f"Feature {i}" for i in range(Z.shape[1])]
-    
+
     # Create figure
     fig, ax = plt.subplots(figsize=figsize)
-    
+
     # Create boxplot
     sns.boxplot(data=Z, ax=ax)
-    
+
     # Add labels
     ax.set_title('Distribution of Influence Scores')
     ax.set_xlabel('Feature')
     ax.set_ylabel('Influence Score')
     ax.set_xticklabels(feature_names, rotation=45, ha='right')
-    
+
     # Add grid
     ax.grid(True, linestyle='--', alpha=0.7)
-    
+
     # Tight layout
     plt.tight_layout()
-    
+
     # Save or display
     if output_path is not None:
         # Create directory if it doesn't exist
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        
+
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         logger.info(f"Influence distribution visualization saved to {output_path}")
     else:
         plt.show()
-    
+
     return fig
 
 
 def visualize_temporal_evolution(clusters, timestamps, output_path=None, figsize=(12, 6)):
     """
     Visualize the temporal evolution of cluster assignments.
-    
+
     Parameters
     ----------
     clusters : numpy.ndarray
@@ -217,30 +227,30 @@ def visualize_temporal_evolution(clusters, timestamps, output_path=None, figsize
         Path to save the visualization. If None, displays the plot.
     figsize : tuple, default=(12, 6)
         Figure size.
-        
+
     Returns
     -------
     matplotlib.figure.Figure
         Figure object.
     """
     import pandas as pd
-    
+
     logger = logging.getLogger(__name__)
     logger.info("Visualizing temporal evolution of clusters...")
-    
+
     # Convert timestamps to pandas Series if not already
     if not isinstance(timestamps, pd.Series):
         timestamps = pd.Series(timestamps)
-    
+
     # Create DataFrame
     df = pd.DataFrame({'cluster': clusters, 'timestamp': timestamps})
-    
+
     # Sort by timestamp
     df = df.sort_values('timestamp')
-    
+
     # Create figure
     fig, ax = plt.subplots(figsize=figsize)
-    
+
     # Plot cluster evolution
     sns.scatterplot(
         x='timestamp',
@@ -252,30 +262,35 @@ def visualize_temporal_evolution(clusters, timestamps, output_path=None, figsize
         alpha=0.7,
         ax=ax
     )
-    
+
     # Add labels
     ax.set_title('Temporal Evolution of Cluster Assignments')
     ax.set_xlabel('Time')
     ax.set_ylabel('Cluster')
-    
+
     # Add grid
     ax.grid(True, linestyle='--', alpha=0.7)
-    
+
     # Remove legend title
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, title=None)
-    
+
     # Tight layout
     plt.tight_layout()
-    
+
     # Save or display
     if output_path is not None:
         # Create directory if it doesn't exist
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+
+        # Change file extension to pdf if it's png
+        output_path_str = str(output_path)
+        if output_path_str.endswith('.png'):
+            output_path = output_path_str.replace('.png', '.pdf')
+
+        plt.savefig(output_path, format='pdf', bbox_inches='tight')
         logger.info(f"Temporal evolution visualization saved to {output_path}")
     else:
         plt.show()
-    
+
     return fig

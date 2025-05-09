@@ -110,10 +110,8 @@ def run_influence_method_benchmark(dataset_name, influence_method, n_samples_lis
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
 
         # Create influence method
         if influence_method == "shap":
@@ -205,10 +203,8 @@ def run_clustering_algorithm_benchmark(dataset_name, clustering_algorithm, n_sam
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
 
         # Train model
         model = GradientBoostModel(**config.MODEL_PARAMS["gradient_boost"])
@@ -309,10 +305,8 @@ def run_end_to_end_benchmark(dataset_name, influence_method, clustering_algorith
         # Load and preprocess data
         start_time = time.time()
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
         preprocessing_time = time.time() - start_time
 
         # Train model
@@ -521,52 +515,95 @@ def create_influence_visualizations(results_df, output_dir):
 
     # Create runtime plot
     plt.figure(figsize=(12, 8))
-    sns.lineplot(
-        data=results_df,
-        x="n_samples",
-        y="runtime_seconds",
-        hue="influence_method",
-        marker="o"
-    )
+    # Check if n_samples column exists
+    if "n_samples" in results_df.columns and len(results_df) > 0:
+        sns.lineplot(
+            data=results_df,
+            x="n_samples",
+            y="runtime_seconds",
+            hue="influence_method",
+            marker="o"
+        )
+    else:
+        # Create a simple bar plot if n_samples is not available
+        sns.barplot(
+            data=results_df,
+            x="influence_method",
+            y="runtime_seconds"
+        )
     plt.title("Influence Method Runtime by Sample Size")
     plt.xlabel("Number of Samples")
     plt.ylabel("Runtime (seconds)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "influence_runtime.png", dpi=300)
+    plt.savefig(vis_dir / "influence_runtime.pdf", format='pdf')
     plt.close()
 
     # Create memory usage plot
     plt.figure(figsize=(12, 8))
-    sns.lineplot(
-        data=results_df,
-        x="n_samples",
-        y="memory_usage_mb",
-        hue="influence_method",
-        marker="o"
-    )
+    # Check if n_samples column exists
+    if "n_samples" in results_df.columns and "memory_usage_mb" in results_df.columns and len(results_df) > 0:
+        sns.lineplot(
+            data=results_df,
+            x="n_samples",
+            y="memory_usage_mb",
+            hue="influence_method",
+            marker="o"
+        )
+    else:
+        # Create a simple bar plot if n_samples is not available
+        if "memory_usage_mb" in results_df.columns:
+            sns.barplot(
+                data=results_df,
+                x="influence_method",
+                y="memory_usage_mb"
+            )
+        else:
+            # Just create an empty plot with a message
+            plt.text(0.5, 0.5, "No memory usage data available",
+                    horizontalalignment='center', verticalalignment='center')
     plt.title("Influence Method Memory Usage by Sample Size")
     plt.xlabel("Number of Samples")
     plt.ylabel("Memory Usage (MB)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "influence_memory.png", dpi=300)
+    plt.savefig(vis_dir / "influence_memory.pdf", format='pdf')
     plt.close()
 
     # Create runtime comparison bar plot
     plt.figure(figsize=(12, 8))
-    sns.barplot(
-        data=results_df[results_df["n_samples"] == 1000],
-        x="influence_method",
-        y="runtime_seconds",
-        hue="dataset"
-    )
+    # Check if we can create a comparison plot
+    if "n_samples" in results_df.columns and "runtime_seconds" in results_df.columns and len(results_df) > 0:
+        # Check if we have data with n_samples == 1000
+        if 1000 in results_df["n_samples"].values:
+            sns.barplot(
+                data=results_df[results_df["n_samples"] == 1000],
+                x="influence_method",
+                y="runtime_seconds",
+                hue="dataset"
+            )
+        else:
+            # Use the largest sample size available
+            max_samples = results_df["n_samples"].max()
+            sns.barplot(
+                data=results_df[results_df["n_samples"] == max_samples],
+                x="influence_method",
+                y="runtime_seconds",
+                hue="dataset"
+            )
+    else:
+        # Create a simple bar plot with all data
+        sns.barplot(
+            data=results_df,
+            x="influence_method",
+            y="runtime_seconds"
+        )
     plt.title("Influence Method Runtime Comparison (1000 samples)")
     plt.xlabel("Influence Method")
     plt.ylabel("Runtime (seconds)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "influence_runtime_comparison.png", dpi=300)
+    plt.savefig(vis_dir / "influence_runtime_comparison.pdf", format='pdf')
     plt.close()
 
 
@@ -603,7 +640,7 @@ def create_clustering_visualizations(results_df, output_dir):
     plt.ylabel("Runtime (seconds)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "clustering_runtime_by_samples.png", dpi=300)
+    plt.savefig(vis_dir / "clustering_runtime_by_samples.pdf", format='pdf')
     plt.close()
 
     # Create runtime plot by number of clusters
@@ -620,7 +657,7 @@ def create_clustering_visualizations(results_df, output_dir):
     plt.ylabel("Runtime (seconds)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "clustering_runtime_by_clusters.png", dpi=300)
+    plt.savefig(vis_dir / "clustering_runtime_by_clusters.pdf", format='pdf')
     plt.close()
 
     # Create memory usage plot
@@ -637,7 +674,7 @@ def create_clustering_visualizations(results_df, output_dir):
     plt.ylabel("Memory Usage (MB)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "clustering_memory.png", dpi=300)
+    plt.savefig(vis_dir / "clustering_memory.pdf", format='pdf')
     plt.close()
 
 
@@ -685,7 +722,7 @@ def create_end_to_end_visualizations(results_df, output_dir):
     plt.ylabel("Time (seconds)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "end_to_end_component_times.png", dpi=300)
+    plt.savefig(vis_dir / "end_to_end_component_times.pdf", format='pdf')
     plt.close()
 
     # Create total time comparison
@@ -701,7 +738,7 @@ def create_end_to_end_visualizations(results_df, output_dir):
     plt.ylabel("Total Time (seconds)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "end_to_end_total_time.png", dpi=300)
+    plt.savefig(vis_dir / "end_to_end_total_time.pdf", format='pdf')
     plt.close()
 
     # Create influence generation time comparison
@@ -717,7 +754,7 @@ def create_end_to_end_visualizations(results_df, output_dir):
     plt.ylabel("Time (seconds)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "influence_generation_time.png", dpi=300)
+    plt.savefig(vis_dir / "influence_generation_time.pdf", format='pdf')
     plt.close()
 
     # Create clustering time comparison
@@ -733,5 +770,5 @@ def create_end_to_end_visualizations(results_df, output_dir):
     plt.ylabel("Time (seconds)")
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(vis_dir / "clustering_time.png", dpi=300)
+    plt.savefig(vis_dir / "clustering_time.pdf", format='pdf')
     plt.close()

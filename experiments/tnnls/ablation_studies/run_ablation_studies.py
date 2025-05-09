@@ -72,10 +72,8 @@ def run_influence_space_ablation(dataset_name, clustering_algorithm, n_clusters,
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
 
         # Train predictive model
         model_params = config.MODEL_PARAMS["gradient_boost"].copy()
@@ -151,7 +149,7 @@ def run_influence_space_ablation(dataset_name, clustering_algorithm, n_clusters,
                 # Visualize clusters
                 visualize_clusters(
                     Z, clusters,
-                    output_path=vis_dir / f"{exp_name}_clusters.png",
+                    output_path=vis_dir / f"{exp_name}_clusters.pdf",
                     method='pca'
                 )
 
@@ -230,10 +228,8 @@ def run_temporal_integration_ablation(dataset_name, influence_method, clustering
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
 
         # Train predictive model
         model_params = config.MODEL_PARAMS["gradient_boost"].copy()
@@ -306,7 +302,7 @@ def run_temporal_integration_ablation(dataset_name, influence_method, clustering
                 # Visualize clusters
                 visualize_clusters(
                     Z, clusters,
-                    output_path=vis_dir / f"{exp_name}_clusters.png",
+                    output_path=vis_dir / f"{exp_name}_clusters.pdf",
                     method='pca'
                 )
 
@@ -387,10 +383,8 @@ def run_contextual_alignment_ablation(dataset_name, influence_method, clustering
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
 
         # Train predictive model
         model_params = config.MODEL_PARAMS["gradient_boost"].copy()
@@ -463,7 +457,7 @@ def run_contextual_alignment_ablation(dataset_name, influence_method, clustering
                 # Visualize clusters
                 visualize_clusters(
                     Z, clusters,
-                    output_path=vis_dir / f"{exp_name}_clusters.png",
+                    output_path=vis_dir / f"{exp_name}_clusters.pdf",
                     method='pca'
                 )
 
@@ -712,7 +706,7 @@ def create_influence_space_visualizations(results_df, output_dir):
     plt.title("Silhouette Score by Dataset and Influence Method")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "influence_silhouette_by_method.png", dpi=300)
+    plt.savefig(vis_dir / "influence_silhouette_by_method.pdf", format='pdf')
     plt.close()
 
     # Create bar plot of temporal consistency by influence method
@@ -726,7 +720,7 @@ def create_influence_space_visualizations(results_df, output_dir):
     plt.title("Temporal Consistency by Dataset and Influence Method")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "influence_temporal_consistency_by_method.png", dpi=300)
+    plt.savefig(vis_dir / "influence_temporal_consistency_by_method.pdf", format='pdf')
     plt.close()
 
 
@@ -765,7 +759,7 @@ def create_temporal_integration_visualizations(results_df, output_dir):
     plt.title("Temporal Consistency by Dataset and Temporal Mode")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "temporal_consistency_by_mode.png", dpi=300)
+    plt.savefig(vis_dir / "temporal_consistency_by_mode.pdf", format='pdf')
     plt.close()
 
     # Create bar plot of silhouette scores by temporal mode
@@ -779,7 +773,7 @@ def create_temporal_integration_visualizations(results_df, output_dir):
     plt.title("Silhouette Score by Dataset and Temporal Mode")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "temporal_silhouette_by_mode.png", dpi=300)
+    plt.savefig(vis_dir / "temporal_silhouette_by_mode.pdf", format='pdf')
     plt.close()
 
 
@@ -818,7 +812,7 @@ def create_contextual_alignment_visualizations(results_df, output_dir):
     plt.title("Entropy by Dataset and Contextual Mode")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "contextual_entropy_by_mode.png", dpi=300)
+    plt.savefig(vis_dir / "contextual_entropy_by_mode.pdf", format='pdf')
     plt.close()
 
     # Create bar plot of silhouette scores by contextual mode
@@ -832,5 +826,5 @@ def create_contextual_alignment_visualizations(results_df, output_dir):
     plt.title("Silhouette Score by Dataset and Contextual Mode")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "contextual_silhouette_by_mode.png", dpi=300)
+    plt.savefig(vis_dir / "contextual_silhouette_by_mode.pdf", format='pdf')
     plt.close()

@@ -66,10 +66,8 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
 
         # Train predictive model
         model_params = config.MODEL_PARAMS["gradient_boost"].copy()
@@ -198,7 +196,7 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
                     plt.ylim(0, 1)
 
                 plt.tight_layout()
-                plt.savefig(vis_dir / f"{exp_name}_context_dim_{i}_distribution.png", dpi=300)
+                plt.savefig(vis_dir / f"{exp_name}_context_dim_{i}_distribution.pdf", format='pdf')
                 plt.close()
 
         # Return results
@@ -380,7 +378,7 @@ def create_summary_visualizations(results_df, output_dir):
     sns.heatmap(pivot, annot=True, cmap="YlGnBu", fmt=".3f")
     plt.title("Normalized Information Gain by Dataset, Context, Method, and Algorithm")
     plt.tight_layout()
-    plt.savefig(vis_dir / "normalized_info_gain_heatmap.png", dpi=300)
+    plt.savefig(vis_dir / "normalized_info_gain_heatmap.pdf", format='pdf')
     plt.close()
 
     # Create bar plot of normalized information gain by influence method
@@ -394,7 +392,7 @@ def create_summary_visualizations(results_df, output_dir):
     plt.title("Normalized Information Gain by Dataset and Influence Method")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "normalized_info_gain_by_influence.png", dpi=300)
+    plt.savefig(vis_dir / "normalized_info_gain_by_influence.pdf", format='pdf')
     plt.close()
 
     # Create bar plot of normalized information gain by context dimension
@@ -410,7 +408,7 @@ def create_summary_visualizations(results_df, output_dir):
         )
         plt.title(f"Normalized Information Gain by Context Dimension for {dataset}")
         plt.tight_layout()
-        plt.savefig(vis_dir / f"{dataset}_normalized_info_gain_by_context.png", dpi=300)
+        plt.savefig(vis_dir / f"{dataset}_normalized_info_gain_by_context.pdf", format='pdf')
         plt.close()
 
     # Create line plot of normalized information gain by number of clusters
@@ -425,5 +423,5 @@ def create_summary_visualizations(results_df, output_dir):
     )
     plt.title("Normalized Information Gain by Number of Clusters")
     plt.tight_layout()
-    plt.savefig(vis_dir / "normalized_info_gain_by_n_clusters.png", dpi=300)
+    plt.savefig(vis_dir / "normalized_info_gain_by_n_clusters.pdf", format='pdf')
     plt.close()

@@ -57,10 +57,8 @@ def run_pattern_discovery_case_study(dataset_name, output_dir):
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
 
         # Train predictive model
         model_params = config.MODEL_PARAMS["gradient_boost"].copy()
@@ -164,7 +162,7 @@ def run_pattern_discovery_case_study(dataset_name, output_dir):
                 plt.xlabel("Feature")
                 plt.ylabel("Cluster")
                 plt.tight_layout()
-                plt.savefig(vis_dir / f"{dataset_name}_cluster_influences_{n_clusters}.png", dpi=300)
+                plt.savefig(vis_dir / f"{dataset_name}_cluster_influences_{n_clusters}.pdf", format='pdf')
                 plt.close()
 
         # Return results
@@ -206,10 +204,8 @@ def run_transition_analysis_case_study(dataset_name, output_dir):
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
 
         # Train predictive model
         model_params = config.MODEL_PARAMS["gradient_boost"].copy()
@@ -256,13 +252,13 @@ def run_transition_analysis_case_study(dataset_name, output_dir):
             # Visualize transition matrix
             visualize_transitions(
                 P,
-                output_path=vis_dir / f"{dataset_name}_transition_matrix.png"
+                output_path=vis_dir / f"{dataset_name}_transition_matrix.pdf"
             )
 
             # Visualize temporal evolution
             visualize_temporal_evolution(
                 clusters, t,
-                output_path=vis_dir / f"{dataset_name}_temporal_evolution.png"
+                output_path=vis_dir / f"{dataset_name}_temporal_evolution.pdf"
             )
 
             # Visualize stationary distribution
@@ -274,7 +270,7 @@ def run_transition_analysis_case_study(dataset_name, output_dir):
             plt.xticks(range(n_clusters))
             plt.grid(True, linestyle='--', alpha=0.7)
             plt.tight_layout()
-            plt.savefig(vis_dir / f"{dataset_name}_stationary_distribution.png", dpi=300)
+            plt.savefig(vis_dir / f"{dataset_name}_stationary_distribution.pdf", format='pdf')
             plt.close()
 
             # Visualize cluster stability
@@ -286,7 +282,7 @@ def run_transition_analysis_case_study(dataset_name, output_dir):
             plt.xticks(range(n_clusters))
             plt.grid(True, linestyle='--', alpha=0.7)
             plt.tight_layout()
-            plt.savefig(vis_dir / f"{dataset_name}_cluster_stability.png", dpi=300)
+            plt.savefig(vis_dir / f"{dataset_name}_cluster_stability.pdf", format='pdf')
             plt.close()
 
             # Create network diagram of transitions
@@ -320,7 +316,7 @@ def run_transition_analysis_case_study(dataset_name, output_dir):
             plt.axis('equal')
             plt.axis('off')
             plt.tight_layout()
-            plt.savefig(vis_dir / f"{dataset_name}_transition_network.png", dpi=300)
+            plt.savefig(vis_dir / f"{dataset_name}_transition_network.pdf", format='pdf')
             plt.close()
 
         # Return results
@@ -366,10 +362,8 @@ def run_anomaly_detection_case_study(dataset_name, output_dir):
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
 
         # Train predictive model
         model_params = config.MODEL_PARAMS["gradient_boost"].copy()
@@ -494,7 +488,7 @@ def run_anomaly_detection_case_study(dataset_name, output_dir):
                 plt.legend()
                 plt.grid(True, linestyle='--', alpha=0.7)
                 plt.tight_layout()
-                plt.savefig(vis_dir / f"{dataset_name}_contextual_anomalies.png", dpi=300)
+                plt.savefig(vis_dir / f"{dataset_name}_contextual_anomalies.pdf", format='pdf')
                 plt.close()
 
         # Return results

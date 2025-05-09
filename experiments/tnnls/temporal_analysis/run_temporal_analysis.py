@@ -35,11 +35,11 @@ from src.utils.metrics import calculate_temporal_consistency
 from src.utils.visualization import visualize_transitions, visualize_temporal_evolution
 
 
-def run_single_experiment(dataset_name, influence_method, clustering_algorithm, 
+def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
                          n_clusters, random_seed, output_dir):
     """
     Run a single temporal analysis experiment.
-    
+
     Parameters
     ----------
     dataset_name : str
@@ -54,7 +54,7 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
         Random seed for reproducibility.
     output_dir : str or Path
         Directory to save results.
-        
+
     Returns
     -------
     dict
@@ -62,24 +62,22 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
     """
     # Set up logging
     logger = logging.getLogger(f"temporal_analysis_{dataset_name}_{influence_method}_{clustering_algorithm}")
-    
+
     # Set random seed
     np.random.seed(random_seed)
-    
+
     try:
         # Load and preprocess data
         data_loader = DataLoader(dataset_name=dataset_name)
-        data = data_loader.load_data()
-        
-        preprocessor = Preprocessor()
-        X, y, t, c = preprocessor.preprocess(data)
-        
+        # Get preprocessed data directly from the data loader
+        X, y, t, c = data_loader.load_data(preprocess=True)
+
         # Train predictive model
         model_params = config.MODEL_PARAMS["gradient_boost"].copy()
         model_params["random_state"] = random_seed
         model = GradientBoostModel(**model_params)
         model.fit(X, y)
-        
+
         # Generate influence space
         if influence_method == "shap":
             influence_params = config.INFLUENCE_PARAMS["shap"].copy()
@@ -92,9 +90,9 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
         else:  # spearman
             influence_params = config.INFLUENCE_PARAMS["spearman"].copy()
             influence_generator = SpearmanInfluence(**influence_params)
-        
+
         Z = influence_generator.generate_influence(model, X)
-        
+
         # Perform clustering
         if clustering_algorithm == "kmeans":
             clustering_params = config.CLUSTERING_PARAMS["kmeans"].copy()
@@ -110,60 +108,60 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
             clustering_params["n_clusters"] = n_clusters
             clustering_params["random_state"] = random_seed
             clustering = SpectralClustering(**clustering_params)
-        
+
         # Fit and predict
         clusters = clustering.fit_predict(Z)
-        
+
         # Compute transition matrix
         transition_matrix = TransitionMatrix()
         P = transition_matrix.compute(clusters, t)
-        
+
         # Compute stationary distribution
         stationary_distribution = transition_matrix.stationary_distribution
-        
+
         # Compute cluster stability
         cluster_stability = transition_matrix.get_cluster_stability()
-        
+
         # Compute temporal consistency
         temporal_consistency = calculate_temporal_consistency(clusters, t)
-        
+
         # Compute transition entropy
         transition_entropy = np.array([entropy(P[i]) for i in range(n_clusters)])
         mean_transition_entropy = np.mean(transition_entropy)
-        
+
         # Detect anomalies
         anomaly_detector = AnomalyDetection()
         anomalies = anomaly_detector.detect(clusters, P, t, threshold=0.1)
         anomaly_rate = len(anomalies) / len(clusters) if len(anomalies) > 0 else 0
-        
+
         # Save visualizations if output_dir is provided
         if output_dir:
             exp_name = f"{dataset_name}_{influence_method}_{clustering_algorithm}_{n_clusters}_{random_seed}"
             vis_dir = Path(output_dir) / "visualizations"
             vis_dir.mkdir(exist_ok=True)
-            
+
             # Visualize transition matrix
             visualize_transitions(
                 P,
-                output_path=vis_dir / f"{exp_name}_transition_matrix.png"
+                output_path=vis_dir / f"{exp_name}_transition_matrix.pdf"
             )
-            
+
             # Visualize temporal evolution
             visualize_temporal_evolution(
                 clusters, t,
-                output_path=vis_dir / f"{exp_name}_temporal_evolution.png"
+                output_path=vis_dir / f"{exp_name}_temporal_evolution.pdf"
             )
-            
+
             # Save transition matrix as CSV
             pd.DataFrame(P).to_csv(vis_dir / f"{exp_name}_transition_matrix.csv")
-            
+
             # Save anomalies if any
             if len(anomalies) > 0:
                 anomalies.to_csv(vis_dir / f"{exp_name}_anomalies.csv", index=False)
-        
+
         # Return results
         result = {
-            "dataset": dataset_name,
+            "dataset": dataset_name,  # Use "dataset" as the key for consistency
             "influence_method": influence_method,
             "clustering_algorithm": clustering_algorithm,
             "n_clusters": n_clusters,
@@ -177,30 +175,30 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
             "stationary_distribution": stationary_distribution.tolist(),
             "transition_matrix": P.tolist()
         }
-        
+
         return result
-    
+
     except Exception as e:
         logger.error(f"Error in experiment: {e}", exc_info=True)
-        
+
         # Return error result
         result = {
-            "dataset": dataset_name,
+            "dataset": dataset_name,  # Use "dataset" as the key for consistency
             "influence_method": influence_method,
             "clustering_algorithm": clustering_algorithm,
             "n_clusters": n_clusters,
             "random_seed": random_seed,
             "error": str(e)
         }
-        
+
         return result
 
 
-def run_temporal_analysis(datasets, influence_methods, clustering_algorithms, 
+def run_temporal_analysis(datasets, influence_methods, clustering_algorithms,
                          n_clusters_list, random_seeds, output_dir, n_jobs=-1, verbose=False):
     """
     Run comprehensive temporal analysis experiments.
-    
+
     Parameters
     ----------
     datasets : list
@@ -219,7 +217,7 @@ def run_temporal_analysis(datasets, influence_methods, clustering_algorithms,
         Number of parallel jobs (-1 for all available cores).
     verbose : bool, default=False
         Enable verbose output.
-        
+
     Returns
     -------
     dict
@@ -228,19 +226,19 @@ def run_temporal_analysis(datasets, influence_methods, clustering_algorithms,
     # Set up logging
     logger = setup_logger("temporal_analysis", "INFO")
     logger.info("Starting temporal analysis experiments...")
-    
+
     # Create output directory
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Import clustering algorithms here to avoid circular imports
     from src.clustering.hierarchical import HierarchicalClustering
     from src.clustering.spectral import SpectralClustering
-    
+
     # Add to global namespace for run_single_experiment
     globals()["HierarchicalClustering"] = HierarchicalClustering
     globals()["SpectralClustering"] = SpectralClustering
-    
+
     # Generate experiment configurations
     experiments = []
     for dataset in datasets:
@@ -249,34 +247,34 @@ def run_temporal_analysis(datasets, influence_methods, clustering_algorithms,
                 for n_clusters in n_clusters_list:
                     for random_seed in random_seeds:
                         experiments.append({
-                            "dataset": dataset,
+                            "dataset_name": dataset,
                             "influence_method": influence_method,
                             "clustering_algorithm": clustering_algorithm,
                             "n_clusters": n_clusters,
                             "random_seed": random_seed,
                             "output_dir": output_dir
                         })
-    
+
     logger.info(f"Running {len(experiments)} experiments...")
-    
+
     # Run experiments in parallel
     start_time = time.time()
     results = Parallel(n_jobs=n_jobs, verbose=10 if verbose else 0)(
         delayed(run_single_experiment)(**exp) for exp in experiments
     )
-    
+
     logger.info(f"Experiments completed in {time.time() - start_time:.2f} seconds")
-    
+
     # Process results
     processed_results = []
     for result in results:
         # Skip error results
         if "error" in result and result["error"] is not None:
             continue
-        
+
         # Extract basic info
         processed_result = {
-            "dataset": result["dataset"],
+            "dataset": result["dataset"],  # Keep as "dataset" for consistency with other modules
             "influence_method": result["influence_method"],
             "clustering_algorithm": result["clustering_algorithm"],
             "n_clusters": result["n_clusters"],
@@ -288,26 +286,26 @@ def run_temporal_analysis(datasets, influence_methods, clustering_algorithms,
             "mean_transition_entropy": result["mean_transition_entropy"],
             "anomaly_rate": result["anomaly_rate"]
         }
-        
+
         processed_results.append(processed_result)
-    
+
     # Create results DataFrame
     results_df = pd.DataFrame(processed_results)
-    
+
     # Save results
     results_file = output_dir / "temporal_analysis_results.csv"
     results_df.to_csv(results_file, index=False)
-    
+
     # Create summary visualizations
     logger.info("Creating summary visualizations...")
     create_summary_visualizations(results_df, output_dir)
-    
+
     # Create transition matrix visualizations
     logger.info("Creating transition matrix visualizations...")
     create_transition_visualizations(results, output_dir)
-    
+
     logger.info(f"Temporal analysis experiments completed. Results saved to {output_dir}")
-    
+
     return {
         "results": results_df.to_dict(orient="records")
     }
@@ -316,7 +314,7 @@ def run_temporal_analysis(datasets, influence_methods, clustering_algorithms,
 def create_summary_visualizations(results_df, output_dir):
     """
     Create summary visualizations of temporal analysis results.
-    
+
     Parameters
     ----------
     results_df : pandas.DataFrame
@@ -327,12 +325,12 @@ def create_summary_visualizations(results_df, output_dir):
     # Create visualizations directory
     vis_dir = Path(output_dir) / "summary_visualizations"
     vis_dir.mkdir(exist_ok=True)
-    
+
     # Calculate mean metrics across random seeds
     mean_results = results_df.groupby(
         ["dataset", "influence_method", "clustering_algorithm", "n_clusters"]
     ).mean().reset_index()
-    
+
     # Create heatmap of temporal consistency
     plt.figure(figsize=(15, 10))
     pivot = mean_results.pivot_table(
@@ -343,9 +341,9 @@ def create_summary_visualizations(results_df, output_dir):
     sns.heatmap(pivot, annot=True, cmap="YlGnBu", fmt=".3f")
     plt.title("Temporal Consistency by Dataset, Method, and Algorithm")
     plt.tight_layout()
-    plt.savefig(vis_dir / "temporal_consistency_heatmap.png", dpi=300)
+    plt.savefig(vis_dir / "temporal_consistency_heatmap.pdf", format='pdf')
     plt.close()
-    
+
     # Create heatmap of cluster stability
     plt.figure(figsize=(15, 10))
     pivot = mean_results.pivot_table(
@@ -356,9 +354,9 @@ def create_summary_visualizations(results_df, output_dir):
     sns.heatmap(pivot, annot=True, cmap="YlGnBu", fmt=".3f")
     plt.title("Cluster Stability by Dataset, Method, and Algorithm")
     plt.tight_layout()
-    plt.savefig(vis_dir / "cluster_stability_heatmap.png", dpi=300)
+    plt.savefig(vis_dir / "cluster_stability_heatmap.pdf", format='pdf')
     plt.close()
-    
+
     # Create bar plot of temporal consistency by influence method
     plt.figure(figsize=(15, 8))
     sns.barplot(
@@ -370,9 +368,9 @@ def create_summary_visualizations(results_df, output_dir):
     plt.title("Temporal Consistency by Dataset and Influence Method")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "temporal_consistency_by_influence.png", dpi=300)
+    plt.savefig(vis_dir / "temporal_consistency_by_influence.pdf", format='pdf')
     plt.close()
-    
+
     # Create bar plot of anomaly rate by influence method
     plt.figure(figsize=(15, 8))
     sns.barplot(
@@ -384,14 +382,14 @@ def create_summary_visualizations(results_df, output_dir):
     plt.title("Anomaly Rate by Dataset and Influence Method")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "anomaly_rate_by_influence.png", dpi=300)
+    plt.savefig(vis_dir / "anomaly_rate_by_influence.pdf", format='pdf')
     plt.close()
 
 
 def create_transition_visualizations(results, output_dir):
     """
     Create visualizations of transition matrices.
-    
+
     Parameters
     ----------
     results : list
@@ -402,30 +400,30 @@ def create_transition_visualizations(results, output_dir):
     # Create visualizations directory
     vis_dir = Path(output_dir) / "transition_visualizations"
     vis_dir.mkdir(exist_ok=True)
-    
+
     # Process each result
     for result in results:
         # Skip error results
         if "error" in result and result["error"] is not None:
             continue
-        
+
         # Skip if no transition matrix
         if "transition_matrix" not in result:
             continue
-        
+
         # Extract info
         dataset = result["dataset"]
         influence_method = result["influence_method"]
         clustering_algorithm = result["clustering_algorithm"]
         n_clusters = result["n_clusters"]
         random_seed = result["random_seed"]
-        
+
         # Create experiment name
         exp_name = f"{dataset}_{influence_method}_{clustering_algorithm}_{n_clusters}_{random_seed}"
-        
+
         # Extract transition matrix
         P = np.array(result["transition_matrix"])
-        
+
         # Create heatmap
         plt.figure(figsize=(10, 8))
         sns.heatmap(P, annot=True, cmap="YlGnBu", fmt=".3f")
@@ -433,39 +431,39 @@ def create_transition_visualizations(results, output_dir):
         plt.xlabel("To Cluster")
         plt.ylabel("From Cluster")
         plt.tight_layout()
-        plt.savefig(vis_dir / f"{exp_name}_transition_heatmap.png", dpi=300)
+        plt.savefig(vis_dir / f"{exp_name}_transition_heatmap.pdf", format='pdf')
         plt.close()
-        
+
         # Create network diagram
         plt.figure(figsize=(10, 8))
-        
+
         # Create positions for nodes in a circle
         pos = {}
         for i in range(n_clusters):
             angle = 2 * np.pi * i / n_clusters
             pos[i] = (np.cos(angle), np.sin(angle))
-        
+
         # Draw nodes
         for i in range(n_clusters):
-            plt.plot(pos[i][0], pos[i][1], 'o', markersize=20, 
+            plt.plot(pos[i][0], pos[i][1], 'o', markersize=20,
                      color=plt.cm.tab10(i % 10))
-            plt.text(pos[i][0], pos[i][1], str(i), 
+            plt.text(pos[i][0], pos[i][1], str(i),
                      horizontalalignment='center', verticalalignment='center')
-        
+
         # Draw edges
         for i in range(n_clusters):
             for j in range(n_clusters):
                 if P[i, j] > 0.1:  # Only draw significant transitions
-                    plt.arrow(pos[i][0], pos[i][1], 
-                              0.8 * (pos[j][0] - pos[i][0]), 
+                    plt.arrow(pos[i][0], pos[i][1],
+                              0.8 * (pos[j][0] - pos[i][0]),
                               0.8 * (pos[j][1] - pos[i][1]),
-                              head_width=0.05, head_length=0.1, 
+                              head_width=0.05, head_length=0.1,
                               fc=plt.cm.Blues(P[i, j]), ec=plt.cm.Blues(P[i, j]),
                               alpha=P[i, j])
-        
+
         plt.title(f"Transition Network: {dataset}, {influence_method}, {clustering_algorithm}")
         plt.axis('equal')
         plt.axis('off')
         plt.tight_layout()
-        plt.savefig(vis_dir / f"{exp_name}_transition_network.png", dpi=300)
+        plt.savefig(vis_dir / f"{exp_name}_transition_network.pdf", format='pdf')
         plt.close()

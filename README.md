@@ -17,14 +17,14 @@ Energy consumption patterns are inherently dynamic, influenced by temporal, cont
 - **Dynamic Clustering**: Perform clustering with temporal and contextual constraints
 - **Transition Analysis**: Track cluster evolution over time using Markov chain models
 - **Anomaly Detection**: Identify rare or unexpected transitions in consumption patterns
-- **Visualization**: Visualize clusters, transitions, and temporal evolution
+- **Visualization**: Visualize clusters, transitions, and temporal evolution in PDF format for publication-ready figures
 
 ## Installation
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/influence.git
-   cd influence
+   git clone https://github.com/your-github-username/dynamic-influence-clustering.git
+   cd dynamic-influence-clustering
    ```
 
 2. Install dependencies:
@@ -163,6 +163,28 @@ The framework can identify anomalous transitions between clusters, which may ind
 1. Create a new class in the `src/clustering/` directory that extends `BaseClustering`
 2. Implement the required methods: `fit()` and `predict()`
 3. Update `main.py` to include the new algorithm
+
+## Contributing and Development
+
+### Cleaning the Project
+
+Before pushing your code to GitHub, you can use the provided cleaning script to remove temporary files, Python cache files, and other artifacts:
+
+```bash
+./clean_project.sh
+```
+
+This script will:
+- Remove Python cache files (`__pycache__`, `.pyc`, etc.)
+- Remove Jupyter notebook checkpoints
+- Remove IDE-specific files
+- Remove log files
+- Clean the results directory
+- Check for large files that might need to be handled with Git LFS
+
+### Code Style
+
+This project follows PEP 8 style guidelines. You can use tools like `flake8` and `black` to ensure your code adheres to these standards.
 
 ## License
 

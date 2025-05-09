@@ -125,14 +125,14 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
             # Visualize clusters with PCA
             visualize_clusters(
                 Z, clusters,
-                output_path=vis_dir / f"{exp_name}_pca.png",
+                output_path=vis_dir / f"{exp_name}_pca.pdf",
                 method='pca'
             )
 
             # Visualize clusters with t-SNE
             visualize_clusters(
                 Z, clusters,
-                output_path=vis_dir / f"{exp_name}_tsne.png",
+                output_path=vis_dir / f"{exp_name}_tsne.pdf",
                 method='tsne'
             )
 
@@ -409,7 +409,7 @@ def create_summary_visualizations(results_df, output_dir):
     sns.heatmap(pivot, annot=True, cmap="YlGnBu", fmt=".3f")
     plt.title("Silhouette Score by Dataset, Method, and Algorithm")
     plt.tight_layout()
-    plt.savefig(vis_dir / "silhouette_heatmap.png", dpi=300)
+    plt.savefig(vis_dir / "silhouette_heatmap.pdf", format='pdf')
     plt.close()
 
     # Create heatmap of Davies-Bouldin index
@@ -436,7 +436,7 @@ def create_summary_visualizations(results_df, output_dir):
     plt.title("Silhouette Score by Dataset and Influence Method")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "silhouette_by_influence.png", dpi=300)
+    plt.savefig(vis_dir / "silhouette_by_influence.pdf", format='pdf')
     plt.close()
 
     # Create bar plot of silhouette scores by clustering algorithm
@@ -450,7 +450,7 @@ def create_summary_visualizations(results_df, output_dir):
     plt.title("Silhouette Score by Dataset and Clustering Algorithm")
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(vis_dir / "silhouette_by_algorithm.png", dpi=300)
+    plt.savefig(vis_dir / "silhouette_by_algorithm.pdf", format='pdf')
     plt.close()
 
     # Create line plot of silhouette scores by number of clusters
@@ -465,5 +465,5 @@ def create_summary_visualizations(results_df, output_dir):
     )
     plt.title("Silhouette Score by Number of Clusters")
     plt.tight_layout()
-    plt.savefig(vis_dir / "silhouette_by_n_clusters.png", dpi=300)
+    plt.savefig(vis_dir / "silhouette_by_n_clusters.pdf", format='pdf')
     plt.close()
