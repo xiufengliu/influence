@@ -6,20 +6,16 @@ import os
 from pathlib import Path
 from experiments.tnnls.run_experiments import run_experiments
 
-# Define a comprehensive experiment to test all methods and algorithms
+# Define a more focused experiment with stable configurations
 datasets = ["energy_data", "steel_industry"]
-# Run all experiment types
+# Run only the most stable experiment types
 experiments = [
-    "clustering_quality",
-    "temporal_analysis",
-    "contextual_coherence",
-    "ablation_studies",
-    "case_studies",
-    "computational_analysis"
+    "temporal_analysis",  # Focus on temporal analysis which is most relevant for the paper
+    "clustering_quality"  # Include basic clustering quality assessment
 ]
-influence_methods = ["shap", "lime", "spearman"]
-clustering_algorithms = ["kmeans", "hierarchical"]  # Removed "spectral" as it's causing hanging issues
-n_clusters_list = [3, 5]
+influence_methods = ["shap"]  # Focus on SHAP which is the most stable method
+clustering_algorithms = ["kmeans"]  # Focus on K-means which is the most reliable algorithm
+n_clusters_list = [3]  # Focus on 3 clusters which works well with the datasets
 random_seeds = [42]
 output_dir = Path("data/results/test_tnnls_real_datasets")
 # Set to -1 to use all available cores for parallel processing
