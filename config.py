@@ -29,11 +29,11 @@ MODEL_PARAMS = {
 # Influence parameters
 INFLUENCE_PARAMS = {
     "shap": {
-        "n_samples": 100,
+        "n_samples": 50,  # Reduced from 100 to save memory
         "random_state": 42
     },
     "lime": {
-        "n_samples": 5000,
+        "n_samples": 1000,  # Reduced from 5000 to save memory
         "random_state": 42
     },
     "spearman": {
