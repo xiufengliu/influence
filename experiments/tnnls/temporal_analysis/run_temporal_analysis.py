@@ -112,27 +112,50 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
         # Fit and predict
         clusters = clustering.fit_predict(Z)
 
-        # Compute transition matrix
-        transition_matrix = TransitionMatrix()
-        P = transition_matrix.compute(clusters, t)
+        # Check if we have only one cluster
+        unique_clusters = np.unique(clusters)
+        n_unique_clusters = len(unique_clusters)
 
-        # Compute stationary distribution
-        stationary_distribution = transition_matrix.stationary_distribution
+        if n_unique_clusters <= 1:
+            logger.warning(f"Only {n_unique_clusters} cluster found for {dataset_name}, {influence_method}, {clustering_algorithm}, n_clusters={n_clusters}")
+            # For a single cluster, set default values
+            P = np.array([[1.0]])
+            stationary_distribution = np.array([1.0])
+            cluster_stability = np.array([1.0])
+            temporal_consistency = 1.0
+            mean_transition_entropy = 0.0
+        else:
+            # Compute transition matrix
+            transition_matrix = TransitionMatrix()
+            P = transition_matrix.compute(clusters, t)
 
-        # Compute cluster stability
-        cluster_stability = transition_matrix.get_cluster_stability()
+            # Compute stationary distribution
+            stationary_distribution = transition_matrix.stationary_distribution
 
-        # Compute temporal consistency
-        temporal_consistency = calculate_temporal_consistency(clusters, t)
+            # Compute cluster stability
+            cluster_stability = transition_matrix.get_cluster_stability()
 
-        # Compute transition entropy
-        transition_entropy = np.array([entropy(P[i]) for i in range(n_clusters)])
-        mean_transition_entropy = np.mean(transition_entropy)
+            # Compute temporal consistency
+            temporal_consistency = calculate_temporal_consistency(clusters, t)
 
-        # Detect anomalies
-        anomaly_detector = AnomalyDetection()
-        anomalies = anomaly_detector.detect(clusters, P, t, threshold=0.1)
-        anomaly_rate = len(anomalies) / len(clusters) if len(anomalies) > 0 else 0
+            # Compute transition entropy
+            transition_entropy = np.array([entropy(P[i]) for i in range(n_unique_clusters)])
+            mean_transition_entropy = np.mean(transition_entropy)
+
+        # Detect anomalies only if we have more than one cluster
+        if n_unique_clusters > 1:
+            try:
+                anomaly_detector = AnomalyDetection()
+                anomalies = anomaly_detector.detect(clusters, P, t, threshold=0.1)
+                anomaly_rate = len(anomalies) / len(clusters) if len(anomalies) > 0 else 0
+            except Exception as e:
+                logger.warning(f"Error detecting anomalies: {e}")
+                anomalies = pd.DataFrame()
+                anomaly_rate = 0.0
+        else:
+            # No anomalies with only one cluster
+            anomalies = pd.DataFrame()
+            anomaly_rate = 0.0
 
         # Save visualizations if output_dir is provided
         if output_dir:
@@ -140,17 +163,21 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
             vis_dir = Path(output_dir) / "visualizations"
             vis_dir.mkdir(exist_ok=True)
 
-            # Visualize transition matrix
-            visualize_transitions(
-                P,
-                output_path=vis_dir / f"{exp_name}_transition_matrix.pdf"
-            )
+            # Only create visualizations if we have more than one cluster
+            if n_unique_clusters > 1:
+                # Visualize transition matrix
+                visualize_transitions(
+                    P,
+                    output_path=vis_dir / f"{exp_name}_transition_matrix.pdf"
+                )
 
-            # Visualize temporal evolution
-            visualize_temporal_evolution(
-                clusters, t,
-                output_path=vis_dir / f"{exp_name}_temporal_evolution.pdf"
-            )
+                # Visualize temporal evolution
+                visualize_temporal_evolution(
+                    clusters, t,
+                    output_path=vis_dir / f"{exp_name}_temporal_evolution.pdf"
+                )
+            else:
+                logger.warning(f"Skipping visualizations for {exp_name} due to only having {n_unique_clusters} cluster")
 
             # Save transition matrix as CSV
             pd.DataFrame(P).to_csv(vis_dir / f"{exp_name}_transition_matrix.csv")

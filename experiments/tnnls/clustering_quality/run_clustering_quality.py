@@ -113,6 +113,13 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
         # Fit and predict
         clusters = clustering.fit_predict(Z)
 
+        # Check if we have only one cluster
+        unique_clusters = np.unique(clusters)
+        n_unique_clusters = len(unique_clusters)
+
+        if n_unique_clusters <= 1:
+            logger.warning(f"Only {n_unique_clusters} cluster found for {dataset_name}, {influence_method}, {clustering_algorithm}, n_clusters={n_clusters}")
+
         # Evaluate clustering
         metrics = evaluate_clustering(Z, clusters)
 
@@ -129,12 +136,14 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
                 method='pca'
             )
 
-            # Visualize clusters with t-SNE
-            visualize_clusters(
-                Z, clusters,
-                output_path=vis_dir / f"{exp_name}_tsne.pdf",
-                method='tsne'
-            )
+            # Visualize clusters with t-SNE only if we have more than one cluster
+            # This avoids segmentation faults with t-SNE
+            if n_unique_clusters > 1:
+                visualize_clusters(
+                    Z, clusters,
+                    output_path=vis_dir / f"{exp_name}_tsne.pdf",
+                    method='tsne'
+                )
 
         # Return results
         result = {

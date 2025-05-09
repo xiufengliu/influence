@@ -42,17 +42,33 @@ def visualize_clusters(Z, labels, output_path=None, method='pca', figsize=(10, 8
 
         # Apply dimensionality reduction
         if Z.shape[1] > 2:
-            if method == 'pca':
+            # Check if we have only one cluster and using t-SNE (which can cause segfaults)
+            n_unique = len(np.unique(labels))
+            if n_unique <= 1 and method == 'tsne':
+                logger.warning("Only one cluster found. Using PCA instead of t-SNE to avoid segmentation fault.")
+                method = 'pca'
+                reducer = PCA(n_components=2, random_state=42)
+            elif method == 'pca':
                 reducer = PCA(n_components=2, random_state=42)
             elif method == 'tsne':
                 # Use a safe perplexity value to avoid division by zero
-                perplexity = min(30, max(5, len(Z) // 5))
-                reducer = TSNE(n_components=2, random_state=42, perplexity=perplexity)
+                # More conservative perplexity calculation
+                perplexity = min(30, max(5, len(Z) // 10))
+                try:
+                    reducer = TSNE(n_components=2, random_state=42, perplexity=perplexity, method='exact')
+                except Exception as e:
+                    logger.warning(f"Error initializing t-SNE: {e}. Using PCA instead.")
+                    reducer = PCA(n_components=2, random_state=42)
             else:
                 logger.warning(f"Unknown method: {method}. Using PCA instead.")
                 reducer = PCA(n_components=2, random_state=42)
 
-            Z_2d = reducer.fit_transform(Z)
+            try:
+                Z_2d = reducer.fit_transform(Z)
+            except Exception as e:
+                logger.warning(f"Error in dimensionality reduction: {e}. Using PCA instead.")
+                reducer = PCA(n_components=2, random_state=42)
+                Z_2d = reducer.fit_transform(Z)
         else:
             Z_2d = Z
 
