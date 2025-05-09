@@ -44,10 +44,24 @@ python main.py --dataset industrial_site1 --influence shap --clustering kmeans
 
 ### TNNLS Experiments
 
-Run comprehensive experiments for TNNLS submission:
+Run comprehensive experiments for TNNLS submission using the sequential approach (recommended):
 
 ```bash
-python run_tnnls_experiments.py --datasets energy_data steel_industry --experiments clustering_quality temporal_analysis
+python test_tnnls_sequential.py
+```
+
+This script runs experiments one influence method at a time to minimize memory usage. You can also specify a single influence method:
+
+```bash
+python test_tnnls_sequential.py spearman  # Run only with Spearman influence (fastest)
+python test_tnnls_sequential.py lime      # Run only with LIME influence
+python test_tnnls_sequential.py shap      # Run only with SHAP influence (most memory-intensive)
+```
+
+For a more focused approach with only Spearman influence method:
+
+```bash
+python test_tnnls_spearman_only.py
 ```
 
 ### Command Line Arguments for Main Script
@@ -76,8 +90,17 @@ python run_tnnls_experiments.py --datasets energy_data steel_industry --experime
 # Run main script
 python main.py --dataset building_genome --influence shap --clustering kmeans --n_clusters 5 --output_dir results/building_genome_shap_kmeans
 
-# Run TNNLS experiments
-python run_tnnls_experiments.py --datasets energy_data --experiments clustering_quality case_studies --influence_methods shap --clustering_algorithms kmeans
+# Run TNNLS experiments sequentially (recommended approach)
+python test_tnnls_sequential.py
+
+# Run TNNLS experiments with only Spearman influence method
+python test_tnnls_sequential.py spearman
+
+# Run TNNLS experiments with only Spearman influence method (alternative script)
+python test_tnnls_spearman_only.py
+
+# Run minimal test with only essential experiments
+python test_tnnls_minimal.py
 ```
 
 ## Project Structure
@@ -163,6 +186,34 @@ The framework can identify anomalous transitions between clusters, which may ind
 1. Create a new class in the `src/clustering/` directory that extends `BaseClustering`
 2. Implement the required methods: `fit()` and `predict()`
 3. Update `main.py` to include the new algorithm
+
+## Memory Management and Troubleshooting
+
+### Memory Optimization
+
+The TNNLS experiments can be memory-intensive, especially when using SHAP and LIME influence methods. To avoid memory issues:
+
+1. Use the sequential approach with `test_tnnls_sequential.py` which runs one influence method at a time
+2. Start with Spearman influence method which is the least memory-intensive
+3. Reduce the number of parallel jobs (the sequential script uses only 1 job)
+4. Run experiments one by one rather than all at once
+
+### Common Issues and Solutions
+
+1. **Out of Memory Errors**:
+   - Use `test_tnnls_sequential.py` instead of running all experiments at once
+   - Run with only Spearman influence: `python test_tnnls_sequential.py spearman`
+   - Reduce the number of datasets or experiments
+
+2. **Hanging Processes**:
+   - This usually indicates memory pressure. Kill the process and try with fewer parallel jobs
+   - Use the sequential approach with one influence method at a time
+
+3. **Transition Matrix Visualization Errors**:
+   - These are handled automatically in the latest version by skipping single-cluster cases
+
+4. **Parameter Name Mismatches**:
+   - These have been fixed in the latest version
 
 ## Contributing and Development
 
