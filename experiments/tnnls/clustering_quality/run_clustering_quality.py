@@ -129,21 +129,45 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
             vis_dir = Path(output_dir) / "visualizations"
             vis_dir.mkdir(exist_ok=True)
 
-            # Visualize clusters with PCA
-            visualize_clusters(
-                Z, clusters,
-                output_path=vis_dir / f"{exp_name}_pca.pdf",
-                method='pca'
-            )
+            # Use a sample of the data if it's large to reduce memory usage
+            if len(Z) > 1000:
+                # Take a random sample of 1000 points
+                sample_indices = np.random.choice(len(Z), size=1000, replace=False)
+                Z_sample = Z[sample_indices]
+                clusters_sample = clusters[sample_indices]
+                logger.info(f"Using a sample of 1000 points for visualization (from {len(Z)} total)")
 
-            # Visualize clusters with t-SNE only if we have more than one cluster
-            # This avoids segmentation faults with t-SNE
-            if n_unique_clusters > 1:
+                # Visualize clusters with PCA
+                visualize_clusters(
+                    Z_sample, clusters_sample,
+                    output_path=vis_dir / f"{exp_name}_pca.pdf",
+                    method='pca'
+                )
+
+                # Visualize clusters with t-SNE only if we have more than one cluster
+                # This avoids segmentation faults with t-SNE
+                if n_unique_clusters > 1:
+                    visualize_clusters(
+                        Z_sample, clusters_sample,
+                        output_path=vis_dir / f"{exp_name}_tsne.pdf",
+                        method='tsne'
+                    )
+            else:
+                # Visualize clusters with PCA
                 visualize_clusters(
                     Z, clusters,
-                    output_path=vis_dir / f"{exp_name}_tsne.pdf",
-                    method='tsne'
+                    output_path=vis_dir / f"{exp_name}_pca.pdf",
+                    method='pca'
                 )
+
+                # Visualize clusters with t-SNE only if we have more than one cluster
+                # This avoids segmentation faults with t-SNE
+                if n_unique_clusters > 1:
+                    visualize_clusters(
+                        Z, clusters,
+                        output_path=vis_dir / f"{exp_name}_tsne.pdf",
+                        method='tsne'
+                    )
 
         # Return results
         result = {
@@ -231,14 +255,21 @@ def run_clustering_quality(datasets, influence_methods, clustering_algorithms,
 
     logger.info(f"Running {len(experiments)} experiments...")
 
-    # Run experiments in parallel with optimized settings
+    # Run experiments in parallel with memory-optimized settings
     start_time = time.time()
+
+    # Use a more conservative approach to parallel processing
+    # Limit the number of jobs to avoid memory issues
+    safe_n_jobs = min(4, os.cpu_count() or 1) if n_jobs == -1 else min(n_jobs, 4)
+    logger.info(f"Using {safe_n_jobs} parallel jobs to avoid memory issues")
+
     results = Parallel(
-        n_jobs=n_jobs,
+        n_jobs=safe_n_jobs,
         verbose=10 if verbose else 0,
-        batch_size="auto",
-        pre_dispatch="2*n_jobs",
-        max_nbytes="100M"  # Increase memory limit for better performance
+        batch_size=1,  # Process one task at a time
+        pre_dispatch="1*n_jobs",  # Limit pre-dispatched tasks
+        max_nbytes="50M",  # Reduce memory limit
+        timeout=None  # No timeout
     )(
         delayed(run_single_experiment)(**exp) for exp in experiments
     )

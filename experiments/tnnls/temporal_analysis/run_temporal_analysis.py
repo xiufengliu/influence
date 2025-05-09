@@ -171,11 +171,27 @@ def run_single_experiment(dataset_name, influence_method, clustering_algorithm,
                     output_path=vis_dir / f"{exp_name}_transition_matrix.pdf"
                 )
 
-                # Visualize temporal evolution
-                visualize_temporal_evolution(
-                    clusters, t,
-                    output_path=vis_dir / f"{exp_name}_temporal_evolution.pdf"
-                )
+                # Use a sample of the data if it's large to reduce memory usage
+                if len(clusters) > 1000:
+                    # Take a random sample of 1000 points
+                    sample_indices = np.random.choice(len(clusters), size=1000, replace=False)
+                    # Sort indices to maintain temporal order
+                    sample_indices = np.sort(sample_indices)
+                    clusters_sample = clusters[sample_indices]
+                    t_sample = t.iloc[sample_indices] if hasattr(t, 'iloc') else t[sample_indices]
+                    logger.info(f"Using a sample of 1000 points for visualization (from {len(clusters)} total)")
+
+                    # Visualize temporal evolution with sample
+                    visualize_temporal_evolution(
+                        clusters_sample, t_sample,
+                        output_path=vis_dir / f"{exp_name}_temporal_evolution.pdf"
+                    )
+                else:
+                    # Visualize temporal evolution with all data
+                    visualize_temporal_evolution(
+                        clusters, t,
+                        output_path=vis_dir / f"{exp_name}_temporal_evolution.pdf"
+                    )
             else:
                 logger.warning(f"Skipping visualizations for {exp_name} due to only having {n_unique_clusters} cluster")
 
@@ -284,14 +300,21 @@ def run_temporal_analysis(datasets, influence_methods, clustering_algorithms,
 
     logger.info(f"Running {len(experiments)} experiments...")
 
-    # Run experiments in parallel with optimized settings
+    # Run experiments in parallel with memory-optimized settings
     start_time = time.time()
+
+    # Use a more conservative approach to parallel processing
+    # Limit the number of jobs to avoid memory issues
+    safe_n_jobs = min(4, os.cpu_count() or 1) if n_jobs == -1 else min(n_jobs, 4)
+    logger.info(f"Using {safe_n_jobs} parallel jobs to avoid memory issues")
+
     results = Parallel(
-        n_jobs=n_jobs,
+        n_jobs=safe_n_jobs,
         verbose=10 if verbose else 0,
-        batch_size="auto",
-        pre_dispatch="2*n_jobs",
-        max_nbytes="100M"  # Increase memory limit for better performance
+        batch_size=1,  # Process one task at a time
+        pre_dispatch="1*n_jobs",  # Limit pre-dispatched tasks
+        max_nbytes="50M",  # Reduce memory limit
+        timeout=None  # No timeout
     )(
         delayed(run_single_experiment)(**exp) for exp in experiments
     )

@@ -292,14 +292,21 @@ def run_contextual_coherence(datasets, influence_methods, clustering_algorithms,
 
     logger.info(f"Running {len(experiments)} experiments...")
 
-    # Run experiments in parallel with optimized settings
+    # Run experiments in parallel with memory-optimized settings
     start_time = time.time()
+
+    # Use a more conservative approach to parallel processing
+    # Limit the number of jobs to avoid memory issues
+    safe_n_jobs = min(4, os.cpu_count() or 1) if n_jobs == -1 else min(n_jobs, 4)
+    logger.info(f"Using {safe_n_jobs} parallel jobs to avoid memory issues")
+
     results = Parallel(
-        n_jobs=n_jobs,
+        n_jobs=safe_n_jobs,
         verbose=10 if verbose else 0,
-        batch_size="auto",
-        pre_dispatch="2*n_jobs",
-        max_nbytes="100M"  # Increase memory limit for better performance
+        batch_size=1,  # Process one task at a time
+        pre_dispatch="1*n_jobs",  # Limit pre-dispatched tasks
+        max_nbytes="50M",  # Reduce memory limit
+        timeout=None  # No timeout
     )(
         delayed(run_single_experiment)(**exp) for exp in experiments
     )
