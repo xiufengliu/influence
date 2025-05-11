@@ -33,7 +33,7 @@ INFLUENCE_PARAMS = {
         "random_state": 42
     },
     "lime": {
-        "n_samples": 1000,  # Reduced from 5000 to save memory
+        "n_samples": 100,  # Drastically reduced from 1000 for faster testing
         "random_state": 42
     },
     "spearman": {

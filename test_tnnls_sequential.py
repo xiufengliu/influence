@@ -45,6 +45,15 @@ all_results = {}
 
 # Run each influence method separately
 for influence_method in all_influence_methods:
+    method_output_dir = output_dir / influence_method
+    results_file_path = method_output_dir / "all_results.json"
+
+    if results_file_path.exists():
+        print(f"Results file found at {results_file_path}, skipping experiments for {influence_method.upper()}.")
+        if influence_method not in all_results:  # Ensure key exists
+            all_results[influence_method] = {"status": "skipped, results pre-existing"}
+        continue
+
     print(f"\n\n{'='*80}")
     print(f"RUNNING WITH INFLUENCE METHOD: {influence_method.upper()}")
     print(f"{'='*80}\n")
