@@ -3,10 +3,13 @@
 
 echo "Cleaning results directory..."
 
-# Remove all files in the results directory but keep the directory structure
-find ./data/results -type f -not -name ".gitkeep" -delete
+# Remove all files and subfolders in the results directory but keep .gitkeep
+# The -mindepth 1 ensures we don't try to delete data/results itself.
+# -path './data/results/.gitkeep' -prune ensures .gitkeep is not deleted if it exists at the top level of data/results.
+# -o -exec rm -rf {} + removes everything else.
+find ./data/results -mindepth 1 -path './data/results/.gitkeep' -prune -o -exec rm -rf {} +
 
-# Create .gitkeep files to preserve directory structure
+# Ensure the results directory and .gitkeep file exist
 mkdir -p data/results
 touch data/results/.gitkeep
 
