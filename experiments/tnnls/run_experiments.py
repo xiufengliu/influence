@@ -29,6 +29,17 @@ from experiments.tnnls.case_studies.run_case_studies import run_case_studies
 from experiments.tnnls.computational_analysis.run_computational_analysis import run_computational_analysis
 
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+
+
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -430,7 +441,7 @@ def run_experiments(datasets, experiments, influence_methods, clustering_algorit
         # Save overall results
         results_file = output_dir / "all_results.json"
         with open(results_file, "w") as f:
-            json.dump(results, f, indent=4)
+            json.dump(results, f, indent=4, cls=NpEncoder)
 
         logger.info(f"All experiments completed. Results saved to {output_dir}")
 
@@ -457,7 +468,7 @@ def main():
         # Save overall results
         results_file = output_dir / "all_results.json"
         with open(results_file, "w") as f:
-            json.dump(results, f, indent=4)
+            json.dump(results, f, indent=4, cls=NpEncoder)
 
         logger.info(f"All experiments completed in {time.time() - start_time:.2f} seconds")
         logger.info(f"Results saved to {output_dir}")
