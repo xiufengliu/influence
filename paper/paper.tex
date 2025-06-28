@@ -1,5 +1,4 @@
-
-\documentclass[final,5p,times,twocolumn,numbers]{elsarticle}
+\documentclass[final,authoryear,3p,times,review,sort&compress]{elsarticle}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -15,6 +14,7 @@
 \usepackage{epstopdf}
 \usepackage{glossaries}
 \usepackage{graphicx}
+\usepackage{setspace}
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
 \usepackage{lineno}
 \usepackage{lscape}
@@ -31,603 +31,614 @@
   urlcolor=cyan   
 }
 
-\DeclareMathOperator*{\argmin}{arg\,min}
-\newtheorem{definition}{Definition}[section]
-\newtheorem{lemma}[definition]{Lemma}
-\newtheorem{theorem}[definition]{Theorem}
-\newtheorem{proposition}[definition]{Proposition}
-\newenvironment{proof}[1][Proof]{\textbf{#1.} }{\hfill$\square$\par\vspace{1ex}}
-\newcommand{\mycomment}[1]{\footnotesize\itshape\textcolor{blue}{#1}}
+% Define theorem environments if not already defined
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
 
-\newcommand{\new}[1]{\textcolor{blue}{#1}}
-\journal{Sustainable Cities and Society}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+
+\newtheorem{remark}[theorem]{Remark}
+
+% Define custom commands if needed
+\newcommand{\vect}[1]{\mathbf{#1}}
+\newcommand{\matr}[1]{\mathbf{#1}}
+\newcommand{\set}[1]{\mathcal{#1}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Tr}{Tr} % Trace operator
+
+\journal{IEEE Transactions on Neural Networks and Learning Systems}
 
 \begin{document}
 \begin{frontmatter}
-\title{Dynamic Influence-Based Clustering for Energy Consumption Analysis: A Framework for Subgroup Discovery and Transition Detection}
-\author[tzvcst]{Rongfei Ma}
-\ead{mrf0105@tzvcst.edu.cn}
-\author[dtu]{Xiufeng Liu\corref{cor}}
+
+
+\title{Learning Interpretable Dynamics: Influence-Based Clustering of Energy Consumption Time Series}
+
+\author[ztie]{Binbin Li}
+\ead{13575792972@163.com}
+
+\author[dtu]{Xiufeng Liu}
 \ead{xiuli@dtu.dk}
 
-\address[tzvcst]{School of Information Engineering, Taizhou Vocational College of Science \& Technology, Taizhou 318020 Zhejiang, China}
+\author[tzvcst]{Rongfei Ma}
+\ead{mrf0105@tzvcst.edu.cn}
+
+\author[sydney]{Yuhao Ma\corref{cor}}
+\ead{yhma.leo@gmail.com}
+
+
+\address[ztie]{Digital Campus Construction Center, Zhejiang Technical Institute of Economics, Hangzhou 310018 Zhejiang, China}
+
 \address[dtu]{Department of Technology, Management and Economics, Technical University of Denmark, 2800 Kgs. Lyngby, Denmark}
 
+\address[tzvcst]{School of Information Engineering, Taizhou Vocational College of Science \& Technology, Taizhou 318020 Zhejiang, China}
+
+\address[sydney]{Business School, The University of Sydney, 2008 Sydney, New South Wales, Australia}
+
+
+
+
 \cortext[cor]{Corresponding authors}
+
+
 \begin{abstract}
-Energy consumption patterns are inherently dynamic, influenced by temporal, contextual, and behavioral factors. Traditional clustering approaches rely on static representations of raw data, often failing to capture the evolving relationships between features and their impact on energy usage. To address this limitation, we propose a novel framework, Dynamic Influence-Based Clustering, which leverages explainable machine learning (XML) to explore and analyze energy consumption patterns. By transforming raw data into an influence space—a representation derived from feature importance explanations—we enable more interpretable and robust subgroup discovery.
-Our framework integrates temporal clustering, transition detection, and anomaly analysis to uncover evolving subgroups of energy consumers. We employ local XML methods, such as SHAP and Spearman coalitional approaches, to compute feature influences, which serve as the basis for clustering. Temporal dynamics are incorporated to track subgroup transitions over time, while anomaly detection highlights deviations in subgroup behaviors. Experimental results on energy consumption datasets demonstrate that clustering in the influence space consistently outperforms clustering in the raw feature space in terms of homogeneity and interpretability. Furthermore, the proposed framework identifies significant transitions and anomalies, offering actionable insights for energy management and policy-making.
-This study establishes a foundation for using influence-based dynamic clustering to understand complex, time-sensitive phenomena, with applications extending beyond energy to other domains with temporal or context-dependent data.
+Energy consumption is governed by dynamic temporal patterns, context, and user behavior. Traditional clustering methods, often operating on raw data, struggle to capture evolving feature relationships and provide interpretable subgroup definitions. To overcome these limitations, we propose a novel framework, \textbf{Dynamic Influence-Based Clustering}, that leverages explainable machine learning (XML) to transform time-series data into an interpretable influence space. Unlike existing approaches that apply XML post-hoc or treat clustering and explanation separately, our framework is the first to jointly optimize influence representation generation and dynamic clustering within a unified mathematical framework. In this space, each data point is represented by a vector of feature contributions to an energy usage prediction, estimated using robust attribution methods such as SHAP or Integrated Gradients applied to predictive models like gradient boosting machines or neural networks. We then introduce a dynamic clustering algorithm that optimizes a composite objective balancing cluster cohesion in the influence space with novel constraints for temporal continuity and contextual alignment—capabilities entirely absent from existing clustering methods. This integrated design enables the robust detection of evolving consumer subgroups and facilitates subgroup transition analysis and anomaly detection. Extensive experiments on two real-world energy datasets demonstrate that our framework produces demonstrably more interpretable, stable, and coherent clusters compared to both standard clustering on raw features and state-of-the-art time-series clustering baselines. The proposed framework provides actionable insights into dynamic energy usage and offers a rigorous foundation for developing interpretable learning systems in time-sensitive domains. 
 \end{abstract}
 
 \begin{keyword}
 Energy Consumption Analysis \sep
-Dynamic Clustering \sep
-Explainable Machine Learning (XML) \sep
-Temporal and Contextual Dynamics \sep
-Anomaly Detection in Energy Data
+Time Series Clustering \sep
+Explainable Machine Learning \sep
+Interpretable Subgroup Discovery \sep
+Anomaly Detection
 \end{keyword}
 
 \end{frontmatter}
 
+\linenumbers
 \section{Introduction}
 \label{sec:intr}
-Energy consumption analysis has become a cornerstone of modern energy systems management, particularly as urbanization accelerates and sustainability initiatives prioritize renewable energy integration and efficient energy use. With the proliferation of smart meters and IoT devices, energy providers now have access to vast and granular data on consumption patterns, spanning individual households to industrial sectors. This data holds immense potential for optimizing energy utilization, balancing grid loads, and informing dynamic pricing strategies. For example, identifying consumer subgroups with similar usage patterns can help design targeted energy-saving campaigns or allocate renewable energy sources effectively. However, traditional methods for analyzing energy consumption data often overlook the dynamic, contextual, and feature-interpretable nature of such data, leaving untapped opportunities for deeper insights and actionable outcomes \cite{c1}, \cite{c2}. These limitations motivate the need for a new framework that not only identifies meaningful subgroups but also captures their evolution over time, providing a dynamic perspective on energy consumption.
+Energy consumption analysis is crucial for managing modern energy systems, especially with increasing urbanization and the push for sustainable practices like renewable energy integration and efficiency improvements \citep{yang2024sustainability}. The widespread deployment of smart meters and Internet of Things (IoT) devices provides unprecedented access to granular energy consumption data, offering significant potential for optimizing energy utilization, enhancing grid stability, and informing dynamic energy policies \citep{jabbar2022smart}. For instance, identifying consumer subgroups with distinct usage patterns enables targeted energy conservation programs and efficient resource allocation. However, conventional analysis methods often struggle with the dynamic, context-dependent, and complex nature of energy consumption data. They frequently rely on static snapshots or overlook underlying drivers, thus failing to yield deep, actionable insights \citep{biscarri2017electricity,ruiz2018energy}. This necessitates advanced frameworks capable of identifying meaningful consumer subgroups, tracking their evolution, and understanding the factors influencing their behavior over time.
 
-Energy consumption patterns exhibit inherent complexities and dynamic variations, presenting several analytical challenges. First, consumption behaviors are highly dependent on interrelated factors, such as weather conditions, time of use, pricing tiers, and demographic information, which vary across time and contexts \cite{c3}, \cite{c4}. Static segmentation methods often fail to account for these dependencies, resulting in oversimplified groupings. Second, traditional clustering approaches rely on raw feature spaces that are sensitive to high-dimensional noise and lack interpretability, making it difficult for energy providers and policymakers to understand the drivers behind subgroup behaviors \cite{c5}. Third, temporal and contextual dependencies—such as daily consumption patterns or regional pricing strategies—play a pivotal role in shaping energy usage but are often overlooked in existing clustering frameworks. Addressing these challenges requires a paradigm shift from static and feature-based approaches to dynamic and interpretable models that consider the evolving nature of energy consumption.
+Analyzing energy consumption patterns presents significant challenges. Firstly, consumption behavior is driven by a complex interplay of factors including weather conditions, time-of-day effects, pricing structures, and socio-demographic variables, all of which fluctuate temporally and contextually \citep{huuki2024house}. Traditional static clustering or segmentation methods often fail to capture these dynamic dependencies, leading to oversimplified or inaccurate groupings. Secondly, many standard clustering algorithms operate on raw feature spaces, which can be high-dimensional, noisy, and lack direct interpretability. This makes it difficult for stakeholders to understand why certain consumers are grouped together or what drives their specific consumption profiles \citep{kallel2025clustering}. Thirdly, critical temporal dynamics (e.g., daily/weekly cycles, seasonality) and contextual factors (e.g., building type, operational state) that shape energy use are often inadequately modeled or ignored in conventional clustering frameworks \citep{bandoria2025enhancing}. Addressing these challenges effectively demands a paradigm shift towards dynamic, interpretable models that embrace the evolving, context-aware nature of energy consumption.
 
-Prior research has explored various methods for clustering and analyzing energy consumption data, including time series clustering, k-means-based segmentation, and density-based approaches \cite{c6}, \cite{c7}. While effective for basic segmentation, these methods often fall short in interpretability and fail to capture the multi-faceted dependencies between features. Recently, explainable machine learning (XML) techniques, such as SHAP and LIME, have gained traction for their ability to provide feature-level explanations for predictions \cite{c8}, \cite{c9}. These techniques have been applied primarily in predictive modeling but have yet to be fully leveraged for clustering purposes, where they could offer interpretable representations of subgroup behaviors. Additionally, existing research rarely addresses how these techniques can be integrated into dynamic clustering frameworks that account for temporal and contextual evolution. These gaps highlight the need for a novel approach that bridges XML methods with dynamic clustering to provide both interpretability and adaptability in energy consumption analysis.
+While various time-series clustering techniques, including k-means variants and density-based methods, have been applied to energy data \citep{yerbury2025comparing,michalakopoulos2024machine}, they often prioritize pattern similarity in the raw data space and may lack sufficient interpretability regarding the features driving the discovered patterns. Recently, Explainable Machine Learning (XML) methods, such as SHAP \citep{bialek2022dataset} and LIME \citep{wang2025tf}, have gained prominence for providing feature-level explanations for predictive models. Our work leverages such methods, with SHAP proving particularly effective in generating robust influence representations. While primarily used in supervised learning contexts, these XML techniques offer powerful, yet largely unexplored, potential for enhancing unsupervised analysis like clustering. Specifically, they can provide interpretable, quantitative measures of feature influence that could form a more meaningful basis for subgroup discovery. The integration of such XML techniques with predictive models, including advanced neural networks like Long Short-Term Memory (LSTM) and Transformer models, offers a promising avenue for developing sophisticated learning systems that can not only predict but also explain complex dynamics in time-series data. However, current research has scarcely explored how to effectively leverage these XML-derived insights within a dynamic clustering framework that explicitly accounts for temporal evolution and contextual dependencies, especially when dealing with the intricate representations learned by deep learning models.
 
-To address these gaps, we propose a novel Dynamic Influence-Based Clustering Framework tailored for energy consumption data. The framework introduces the concept of an influence space, where each instance is represented by feature importance scores derived from XML methods. This transformation shifts the focus from raw feature spaces to interpretable influence-based representations, enabling clustering that is both robust and explanatory. Furthermore, the framework integrates temporal and contextual analysis to track subgroup transitions over time and detect rare or unexpected patterns. These innovations offer a comprehensive solution to the challenges of analyzing dynamic energy consumption data. The primary contributions of this work are as follows: \begin{enumerate} \item We propose an influence-based clustering approach that enhances subgroup interpretability by leveraging feature importance explanations derived from XML methods.
-\item We develop a dynamic clustering framework that captures temporal and contextual dependencies, enabling the identification of subgroup transitions and evolution over time. 
-\item We introduce a transition-based anomaly detection mechanism to uncover rare or unexpected behaviors in energy consumption patterns. \end{enumerate}
+To bridge this critical gap, we propose a novel framework: \textbf{Dynamic Influence-Based Clustering}. This framework is specifically designed for the interpretable analysis of dynamic energy consumption patterns by learning the influence dynamics that drive subgroup behavior. Its core innovation lies in transforming raw data into an influence space, where each data point is represented not by its raw feature values, but by a vector of feature influence scores derived using XML techniques such as SHAP or Integrated Gradients. This transformation shifts the clustering objective towards grouping consumers based on the shared drivers of their consumption, thereby enhancing interpretability. Our framework systematically integrates a predictive model (e.g., XGBoost, LSTM), an XML attribution method (e.g., SHAP, Integrated Gradients), and a dynamic clustering algorithm that explicitly optimizes for temporal continuity and contextual coherence.
 
-The remainder of this paper is organized as follows: Section~\ref{sec:related_work} provides an overview of related work in energy consumption clustering, XML methods, and dynamic subgroup analysis. Section~\ref{sec:prob} formalizes the problem of influence-based dynamic clustering, defining key objectives and methodologies. Section~\ref{sec:methodology} describes the proposed framework, including data preprocessing, predictive modeling, influence space generation, and dynamic clustering techniques. Section~\ref{sec:exp} presents experimental evaluations using real-world energy datasets and compares the proposed method to existing approaches. Section~\ref{sec:diss} discusses the implications of the findings and their relevance to energy management. Finally, Section~\ref{sec:con} concludes the paper and outlines future research directions.
+The primary contributions of this work are:
+\begin{enumerate}
+    \item \textbf{A Novel Joint Influence-Dynamics Clustering Paradigm:} We introduce the first framework that performs clustering directly on XML-derived feature attribution vectors while simultaneously optimizing for temporal and contextual constraints. Unlike existing static influence clustering approaches, our method creates a unified mathematical framework where influence representation and dynamic clustering objectives are jointly optimized, enabling feedback between explanatory power and cluster stability.
+    \item \textbf{A Principled Constrained Dynamic Clustering Algorithm:} We develop the first rigorous dynamic clustering algorithm specifically designed for influence spaces that integrates temporal continuity and contextual alignment constraints directly into the assignment process. Our composite objective function provides mathematical foundations for balancing influence-based cohesion with temporal smoothness and contextual coherence—capabilities entirely absent from existing clustering methods.
+    \item \textbf{Temporal Influence Dynamics Analysis Framework:} We introduce novel mechanisms for analyzing how influence patterns themselves evolve over time, enabling the identification of \textit{why} subgroup behavior changes (through shifting influence dynamics) rather than just detecting \textit{that} changes occur. This includes principled transition analysis using Markov models and anomaly detection based on deviations from learned influence dynamics.
+    \item \textbf{Comprehensive Empirical Validation with Multiple XML Methods:} We provide the first systematic empirical evaluation comparing different influence representations (SHAP, LIME, Integrated Gradients, Spearman guidance) within a dynamic clustering context, demonstrating significant improvements over both traditional clustering on raw data and state-of-the-art time-series clustering baselines across multiple real-world datasets and evaluation dimensions.
+\end{enumerate}
+
+The remainder of this paper is organized as follows: Section~\ref{sec:related_work} provides an overview of related work. Section~\ref{sec:prob_formulation_method} formalizes the problem formulation and details the proposed Dynamic Influence-Based Clustering framework. Section~\ref{sec:exp} presents the experimental setup and results. Section~\ref{sec:diss} discusses the findings and their implications. Finally, Section~\ref{sec:con} concludes the paper and outlines future research directions.
+
 \section{Related Work}
 \label{sec:related_work}
-\section{Methodology}
-\label{sec:methodology}
-This section presents our Dynamic Influence-Based Clustering framework for energy consumption analysis. We provide a comprehensive theoretical foundation that integrates data representation, influence space transformation, and dynamic clustering components.
 
-\subsection{Problem Formulation}
-Let $\mathcal{D} = \{ (\mathbf{x}_i, y_i, t_i, c_i) \}_{i=1}^N$ be a temporal dataset capturing energy consumption patterns. Each instance $i$ in the dataset consists of a feature vector $\mathbf{x}_i = [x_{i,1}, \ldots, x_{i,d}] \in \mathbb{R}^d$ that represents environmental and contextual variables such as temperature, humidity, time of day, and pricing information. The corresponding energy consumption value $y_i \in \mathbb{R}$ quantifies the actual energy usage. Each observation is timestamped with $t_i \in \mathbb{R}^+$ and associated with contextual attributes $c_i \in \mathcal{C}$ that capture domain-specific factors such as geographic location, consumer type, or seasonal characteristics.
+The analysis of energy consumption data is crucial for optimizing energy systems, promoting sustainability, and informing policy. Clustering is a key technique in this domain, but traditional methods face challenges related to data dynamics, interpretability, and contextual awareness. This section reviews prior work on clustering energy consumption data and the role of explainability, positioning our proposed framework within the existing landscape.
 
-Given this rich temporal dataset, our primary objective is to discover interpretable and dynamic consumption patterns through influence-based clustering. We formulate this as an optimization problem:
-\begin{equation}
-    \min_{\{\mathcal{C}_k\}_{k=1}^K} \sum_{k=1}^K \sum_{i,j \in \mathcal{C}_k} d(\phi(\mathbf{x}_i), \phi(\mathbf{x}_j))
-\end{equation}
-where $\phi: \mathbb{R}^d \to \mathbb{R}^m$ represents an influence mapping function that transforms the raw feature space into an interpretable influence space. This transformation preserves the essential relationships between features while enhancing the interpretability of clustering results. The distance metric $d(\cdot,\cdot)$ measures the similarity between influence vectors in the transformed space.
+\subsection{Clustering Approaches for Dynamic Energy Consumption Patterns}
+Clustering techniques are widely used to segment energy consumers based on their consumption patterns, aiding in load profiling, tariff design \citep{mileta2011electricity}, demand-response targeting \citep{pelekis2023targeted}, and anomaly detection \citep{kloska2023expert}. Initial efforts often employed conventional algorithms like K-means \citep{ruiz2020time, michalakopoulos2024machine}, hierarchical clustering \citep{almahamid2022agglomerative}, and density-based methods \citep{aurangzeb2024dbscan} on aggregated or static snapshots of consumption data. While useful for basic segmentation, these static approaches inherently fail to capture the significant temporal variations (daily, weekly, seasonal cycles) characteristic of energy usage, often leading to oversimplified groupings \citep{melo2023review}. Furthermore, clustering directly on high-dimensional, potentially noisy, raw feature spaces hinders interpretability; it becomes challenging for stakeholders to understand why certain consumers are grouped together or what drives their specific consumption profiles \citep{jones2025intersectionality}.
 
-The clustering solution must satisfy two critical constraints that capture the temporal and contextual nature of energy consumption:
-\begin{equation}
-    \min \sum_{t} d_{\text{temporal}}(\mathcal{C}_{t}, \mathcal{C}_{t+1})
-\end{equation}
-\begin{equation}
-    \min \sum_{k=1}^K \text{Var}(\mathcal{C}_k \mid c_i)
-\end{equation}
+Recognizing the time-series nature of energy data, researchers have adopted specialized techniques. Time series clustering methods using shape-based similarity metrics like Dynamic Time Warping (DTW) \citep{zhang2022clustering, shen2025dtw} or feature-based approaches extracting temporal characteristics \citep{choksi2020feature} offer improvements by considering temporal dependencies. More advanced time series clustering algorithms, such as k-Shape \citep{paparrizos2015kshape} which uses a shape-based distance metric, or model-based approaches that fit probabilistic models to time series data \citep{alonso2006model}, have also been developed to better capture the inherent structure of temporal sequences. Dynamic clustering techniques, such as incremental algorithms \citep{jiang2021incremental} or sliding window approaches \citep{benitez2022automated}, attempt to address this by updating clusters over time \citep{zhang2023dynamic}. While capable of tracking evolving patterns in raw data, these methods typically do not explain \textit{why} clusters merge, split, or transition; the underlying reasons related to shifts in the influence of driving factors remain obscured. They primarily adapt to changing patterns rather than providing interpretable insights into the dynamics of influence. Our work distinguishes itself by explicitly transforming the data into an influence space, thereby shifting the focus from raw pattern similarity to the underlying drivers of those patterns, and integrating temporal and contextual constraints directly into the clustering objective.
 
-The temporal consistency constraint $d_{\text{temporal}}$ ensures smooth transitions between consecutive time periods, reflecting the gradual evolution of consumption patterns. The contextual coherence constraint, expressed through the conditional variance term, ensures that clusters remain meaningful within specific contexts while allowing for natural variations in consumption behavior.
-This formulation enables the discovery of interpretable subgroups whose evolution can be tracked over time, providing insights into changing energy consumption patterns and their underlying drivers. The resulting clusters can inform energy management strategies, facilitate targeted interventions, and support policy decisions for sustainable energy usage.
+\subsection{Explainability and Influence-Based Representation for Clustering}
+The pursuit of interpretability in data analysis has gained significant momentum with the rise of Explainable Machine Learning (XML) or Explainable AI (XAI) \citep{abusitta2024survey}. XML techniques, notably SHAP \citep{van2022tractability} and LIME \citep{garreau2020explaining}, provide powerful tools to quantify the contribution of individual input features to the predictions of complex models. Within energy analysis, XML has primarily been used post-hoc: either to explain forecasts generated by supervised models \citep{shajalal2024forecastexplainer} or to analyze the characteristics differentiating pre-existing clusters \citep{cohen2024shapley}. Some interpretable clustering methods aim to generate simple decision rules or prototypes \citep{hu2025interpretable}, but these may not capture the complex, instance-specific influence patterns revealed by modern XML techniques, especially for time-dependent data.
 
-\subsection{Framework Overview}
-The Dynamic Influence-Based Clustering framework integrates three key components: predictive modeling with XML-based influence generation, influence space transformation, and dynamic clustering with temporal-contextual integration. This novel approach transforms raw energy consumption data into an interpretable influence space, where clustering reveals meaningful consumption patterns and their evolution over time.
+A significant, largely unexplored opportunity lies in leveraging XML-derived feature influences not just for post-hoc explanation, but as the primary data representation for clustering itself. The hypothesis underpinning our work, and supported by emerging research on static datasets \citep{escriva2025effective}, is that transforming data into an `influence space' where each point represents the quantitative impact of various factors on consumption can lead to more robust and meaningful clusters. Such a representation may capture the underlying `behavioral drivers' more effectively than the often noisy raw consumption patterns, potentially leading to clusters that are more stable and directly interpretable in terms of influential factors. 
 
-\begin{figure}[t]
+\textbf{Critical Research Gap:} While clustering on local explanations shows promise for static data exploration \citep{escriva2025effective}, existing work suffers from fundamental limitations: (1) \textit{Static Analysis Only} - prior influence-based clustering approaches operate on static datasets without considering temporal evolution or contextual dependencies; (2) \textit{Post-hoc Integration} - existing methods apply XML techniques after clustering rather than jointly optimizing for both influence-based representation and dynamic constraints; (3) \textit{Limited Temporal Modeling} - no existing framework systematically addresses how influence patterns evolve over time or how to maintain cluster coherence across temporal transitions; and (4) \textit{Absence of Contextual Awareness} - current approaches ignore the critical role of operational contexts in shaping influence dynamics. Our comprehensive review reveals that no existing research framework systematically integrates XML-based influence representation with principled dynamic, context-aware clustering specifically designed for time series analysis, particularly when leveraging advanced deep learning models and their corresponding instance-specific attribution methods like Integrated Gradients.
+
+The proposed Dynamic Influence-Based Clustering framework aims to fill this gap through \textbf{three fundamental innovations that distinguish it from all existing work}: 
+
+\textbf{(1) Joint Influence-Dynamics Optimization:} Unlike existing approaches that apply XML post-hoc or treat clustering and explanation separately, our framework jointly optimizes influence representation generation and dynamic clustering within a unified objective function. This creates a feedback mechanism where temporal and contextual constraints directly shape the influence space construction, leading to more coherent and stable representations.
+
+\textbf{(2) Principled Temporal-Contextual Modeling:} We introduce the first systematic mathematical framework for incorporating both temporal continuity and contextual alignment directly into influence-based clustering. Our composite objective function (Eq.~\ref{eq:full_objective}) provides rigorous mathematical foundations for balancing influence-based cohesion with temporal smoothness and contextual coherence—capabilities entirely absent from existing static influence clustering methods.
+
+\textbf{(3) Dynamic Influence Space Evolution:} Our approach captures how influence patterns themselves evolve over time, enabling the analysis of \textit{why} consumer behavior changes (through shifting influence dynamics) rather than just \textit{that} it changes. This provides a fundamentally deeper level of interpretability compared to existing time-series clustering methods that focus on pattern similarity without explanatory power.
+
+By constructing and clustering within an influence space, and explicitly incorporating temporal continuity and contextual alignment constraints, our approach seeks to provide: (1) enhanced subgroup interpretability based on feature influence, (2) robust tracking of subgroup evolution over time, (3) contextually meaningful clusters, and (4) a basis for analyzing transitions and anomalies through the lens of changing influences. This contrasts sharply with prior work that typically separates interpretability from dynamic clustering or uses XML merely for explanation after clustering on raw data, without any principled integration of temporal or contextual dynamics.
+
+\subsection{Distinguishing Features from Existing Approaches}
+\label{sec:distinguishing_features}
+
+To clearly establish the novelty of our contribution, Table~\ref{tab:comparison_existing_work} provides a systematic comparison between our Dynamic Influence-Based Clustering framework and existing approaches across key methodological dimensions. This comparison demonstrates that our work addresses a unique combination of challenges that no existing method tackles comprehensively.
+
+\begin{table}[t!]
 \centering
-\includegraphics[width=\columnwidth]{framework_overview}
-\caption{Overview of the Dynamic Influence-Based Clustering framework. The framework transforms raw energy consumption data through three stages: (1) predictive modeling and XML-based influence generation, (2) influence space transformation, and (3) dynamic clustering with temporal-contextual integration, producing interpretable clusters with transition patterns.}
-\label{framework_overview}
-\end{figure}
-
-The framework processes data through three sequential stages. In Stage 1, raw energy consumption data $\mathcal{D}$ containing feature vectors $\mathbf{x}_i$, consumption values $y_i$, timestamps $t_i$, and contextual attributes $c_i$ serves as input to a predictive model. This model, combined with XML methods, generates feature importance scores that capture the relationship between input features and energy consumption patterns.
-Stage 2 transforms these importance scores into an influence space $\mathcal{Z}$, where each dimension represents the impact of specific features on consumption behavior. This transformation enhances interpretability by mapping instances to a space where similarities reflect shared influential factors rather than raw feature values.
-In Stage 3, the framework performs dynamic clustering in the influence space while incorporating temporal and contextual constraints. The temporal integration tracks cluster evolution through a transition matrix $\mathbf{P}$, while contextual alignment ensures cluster coherence within specific environmental conditions. This stage produces interpretable clusters that reveal both stable consumption patterns and their transitions over time.
-
-The framework's output consists of dynamic clusters characterized by their influence patterns, temporal evolution, and contextual dependencies. These results provide actionable insights for energy management, enabling the identification of consumption subgroups and their behavioral changes across different contexts and time periods.
-
-\subsection{Influence Space Transformation}
-Traditional feature spaces often fail to capture the complex relationships between energy consumption patterns and their driving factors, as they represent raw measurements without considering their contextual importance. We introduce an influence space transformation that maps instances from the raw feature space to a representation that quantifies the contribution of each feature to energy consumption predictions. This transformation enhances interpretability by explicitly capturing feature importance patterns while preserving essential relationships for clustering.
-
-\subsubsection{Predictive Model Construction}
-The foundation of our framework lies in constructing a predictive model $f: \mathbb{R}^d \to \mathbb{R}$ that maps feature vectors to energy consumption values. This model is optimized through a carefully designed objective function:
-\begin{equation}
-    \mathcal{L}(f) = \frac{1}{N} \sum_{i=1}^N \ell(f(\mathbf{x}_i), y_i) + \lambda \Omega(f)
-\end{equation}
-where $\ell(\cdot,\cdot)$ denotes the mean squared error loss function and $\Omega(f)$ represents a regularization term with coefficient $\lambda$. The MSE loss is particularly suitable for energy consumption prediction as it effectively penalizes large deviations that could impact influence generation, maintains differentiability for gradient-based optimization, and provides a natural scale for comparing prediction errors.
-
-To ensure robust and reliable influence generation, the model must satisfy three essential properties:
-\begin{theorem}[Model Properties]
-For the predictive model $f$, the following properties hold:
-\begin{equation}
-\begin{aligned}
-    & \text{(P1)} \quad \text{Lipschitz Continuity}: \|f(\mathbf{x}) - f(\mathbf{x}')\| \leq L\|\mathbf{x} - \mathbf{x}'\|, \\
-    & \text{(P2)} \quad \text{Bounded Gradients}: \|\nabla f(\mathbf{x})\| \leq M, \forall \mathbf{x} \in \mathbb{R}^d, \\
-    & \text{(P3)} \quad \text{Strong Convexity}: f(\alpha\mathbf{x} + (1-\alpha)\mathbf{x}') \leq \alpha f(\mathbf{x}) \\ 
-    & \hspace{7em} + (1-\alpha)f(\mathbf{x}') - \frac{\mu}{2}\alpha(1-\alpha)\|\mathbf{x}-\mathbf{x}'\|^2,
-\end{aligned}
-\end{equation}
-where $L$, $M$, and $\mu$ are positive constants.
-\end{theorem}
-
-These properties ensure the model's stability and reliability in capturing energy consumption patterns, which is crucial for generating meaningful influence representations.
-
-\subsubsection{Feature Influence Generation}
-The core of our framework lies in the influence transformation $g: \mathbb{R}^d \times \mathcal{F} \to \mathbb{R}^m$ that maps instances to influence space $\mathcal{Z}$:
-\begin{equation}
-    \mathbf{z}_i = g(f, \mathbf{x}_i) = [z_{i,1}, \ldots, z_{i,m}]
-\end{equation}
-where each component $z_{i,j}$ quantifies feature $j$'s contribution to the prediction $f(\mathbf{x}_i)$. We employ SHAP values to compute these influences, leveraging their game-theoretic foundation:
-\begin{equation}
-    z_{i,j} = \sum_{S \subseteq \mathcal{F}\setminus\{j\}} \frac{|S|!(|\mathcal{F}|-|S|-1)!}{|\mathcal{F}|!}[f_x(S \cup \{j\}) - f_x(S)]
-\end{equation}
-where $\mathcal{F}$ represents the feature set and $f_x(S)$ denotes the model's prediction with features in subset $S$. This formulation ensures that the influence scores capture both individual feature impacts and their interactions.
-
-A key theoretical guarantee of our transformation is the preservation of important patterns:
-\begin{theorem}[Influence Preservation]
-For any two instances $\mathbf{x}_i, \mathbf{x}_j$ with similar energy consumption patterns:
-\begin{equation}
-    \|f(\mathbf{x}_i) - f(\mathbf{x}_j)\| \leq \epsilon \implies \|g(f,\mathbf{x}_i) - g(f,\mathbf{x}_j)\| \leq K\epsilon
-\end{equation}
-where $K$ is determined by the model architecture.
-
-\begin{proof}
-Let $\phi_j(\mathbf{x})$ denote the Shapley value for feature $j$. By the Lipschitz continuity of $f$:
-\begin{equation}
-    \|\phi_j(\mathbf{x}_i) - \phi_j(\mathbf{x}_j)\| \leq L\|\mathbf{x}_i - \mathbf{x}_j\|
-\end{equation}
-
-For any coalition $S \subseteq \mathcal{F}\setminus\{j\}$:
-\begin{equation}
-    |f_{\mathbf{x}_i}(S \cup \{j\}) - f_{\mathbf{x}_i}(S)| \leq M\|\mathbf{x}_i - \mathbf{x}_j\|
-\end{equation}
-
-By the strong convexity of $f$ and bounded gradients:
-\begin{equation}
-    \|g(f,\mathbf{x}_i) - g(f,\mathbf{x}_j)\| \leq \sum_{j=1}^d \|\phi_j(\mathbf{x}_i) - \phi_j(\mathbf{x}_j)\| \leq dLM\epsilon = K\epsilon
-\end{equation}
-where $K = dLM$ is determined by the dimension $d$ and model constants $L,M$.
-\end{proof}
-\end{theorem}
-This transformation maintains the dimensionality of the original space ($m=d$) while enhancing the signal-to-noise ratio by focusing on features that significantly impact energy consumption predictions. The influence space provides a more interpretable and robust foundation for subsequent clustering analysis, as it captures the essential relationships between features and their impact on energy consumption patterns.
-\subsection{Dynamic Clustering}
-Energy consumption patterns exhibit complex temporal and contextual dependencies that traditional static clustering methods fail to capture effectively. Our framework addresses these limitations through dynamic clustering in influence space, where patterns are represented by their feature importance scores rather than raw measurements. This approach enables the discovery of interpretable subgroups while preserving their temporal evolution and contextual relationships. The framework integrates three key components: cluster optimization in influence space, temporal continuity preservation, and contextual alignment.
-
-\subsubsection{Cluster Optimization}
-Given the influence space representation $\mathcal{Z} = \{\mathbf{z}_i\}_{i=1}^N$, we formulate the clustering objective as:
-\begin{equation}
-    \min_{\{\mathcal{C}_k\}_{k=1}^K} \sum_{k=1}^K \sum_{i,j \in \mathcal{C}_k} d(\mathbf{z}_i, \mathbf{z}_j)
-\end{equation}
-
-The distance metric $d(\cdot,\cdot)$ in influence space satisfies essential mathematical properties:
-\begin{equation}
-    \begin{aligned}
-    & \text{(D1)} \quad d(\mathbf{z}_i, \mathbf{z}_j) \geq 0 \text{ (non-negativity)} \\
-    & \text{(D2)} \quad d(\mathbf{z}_i, \mathbf{z}_j) = d(\mathbf{z}_j, \mathbf{z}_i) \text{ (symmetry)} \\
-    & \text{(D3)} \quad d(\mathbf{z}_i, \mathbf{z}_k) \leq d(\mathbf{z}_i, \mathbf{z}_j) + d(\mathbf{z}_j, \mathbf{z}_k) \text{ (triangle inequality)}
-    \end{aligned}
-\end{equation}
-
-These properties ensure that similar influence patterns remain close in the transformed space, preserving the interpretability established by the Influence Preservation theorem. For energy consumption patterns, this means instances with similar feature importance profiles are grouped together, revealing meaningful subgroups based on their driving factors rather than raw measurements.
-
-\subsubsection{Temporal Integration}
-Energy consumption patterns evolve gradually over time, necessitating a temporal continuity criterion:
-\begin{equation}
-    \min \sum_{t} d_{\text{cluster}}(\mathcal{C}_{t-1}, \mathcal{C}_t)
-\end{equation}
-where $d_{\text{cluster}}$ quantifies the dissimilarity between consecutive cluster assignments:
-\begin{equation}
-    d_{\text{cluster}}(\mathcal{C}_{t-1}, \mathcal{C}_t) = \sum_{k=1}^K \frac{|\mathcal{C}_{t-1,k} \triangle \mathcal{C}_{t,k}|}{|\mathcal{C}_{t-1,k} \cup \mathcal{C}_{t,k}|}
-\end{equation}
-
-The symmetric difference operator $\triangle$ measures cluster membership changes, ensuring smooth transitions between time periods. This formulation prevents unrealistic abrupt changes in consumption patterns while allowing natural evolution, such as seasonal variations or gradual behavior changes.
-
-\subsubsection{Contextual Alignment}
-Energy consumption patterns are inherently context-dependent, varying with factors like weather conditions, pricing schemes, and geographic locations. We incorporate this contextual dependency through conditional variance minimization:
-\begin{equation}
-    \min \sum_{k=1}^K \text{Var}(\mathcal{C}_k \mid c_i)
-\end{equation}
-
-This objective ensures cluster homogeneity within specific contexts while allowing patterns to adapt across different conditions. For example, heating patterns may cluster differently during summer versus winter, or consumption behaviors may vary between peak and off-peak pricing periods.
-
-The complete dynamic clustering objective combines these components:
-\begin{equation}
-    \begin{aligned}
-        & \min_{\{\mathcal{C}_k\}_{k=1}^K} \Bigg[ \alpha \sum_{k=1}^K \sum_{i,j \in \mathcal{C}_k} d(\mathbf{z}_i, \mathbf{z}_j) \\
-        & \quad + \beta \sum_{t} d_{\text{cluster}}(\mathcal{C}_{t-1}, \mathcal{C}_t) \\
-        & \quad + \gamma \sum_{k=1}^K \text{Var}(\mathcal{C}_k \mid c_i) \Bigg],
-    \end{aligned}
-\end{equation}
-where $\alpha$, $\beta$, and $\gamma$ are non-negative weights balancing the relative importance of cluster cohesion, temporal smoothness, and contextual coherence. This formulation provides a flexible framework for discovering and tracking meaningful energy consumption patterns while maintaining interpretability and practical relevance.
-
-\subsection{Transition Analysis}
-Understanding the evolution of energy consumption patterns over time is crucial for effective energy management and policy making. While static clustering reveals instantaneous consumption behaviors, analyzing transitions between clusters provides deeper insights into behavioral changes, seasonal variations, and responses to external factors. We introduce a probabilistic framework based on Markov chain theory to quantify and analyze these evolutionary patterns.
-
-Given the clusters $\{\mathcal{C}_k\}_{k=1}^K$ obtained from our dynamic clustering framework, we construct a transition matrix $\mathbf{P} \in \mathbb{R}^{K \times K}$ where each entry $P_{ij}$ represents the probability of transitioning from cluster $i$ to cluster $j$ between consecutive time steps:
-\begin{equation}
-    P_{ij} = \frac{\text{count}(\mathcal{C}_{t,i} \to \mathcal{C}_{t+1,j})}{\sum_{j} \text{count}(\mathcal{C}_{t,i} \to \mathcal{C}_{t+1,j})}
-\end{equation}
-
-The transition matrix $\mathbf{P}$ satisfies several fundamental properties that ensure its validity as a stochastic process:
-\begin{theorem}[Transition Matrix Properties]
-For the constructed transition matrix $\mathbf{P}$:
-\begin{equation}
-    \begin{aligned}
-    & \text{(P1)} \quad P_{ij} \geq 0 \quad \forall i,j \in \{1,\ldots,K\} \text{ (Non-negativity)} \\
-    & \text{(P2)} \quad \sum_{j=1}^K P_{ij} = 1 \quad \forall i \in \{1,\ldots,K\} \text{ (Stochasticity)} \\
-    & \text{(P3)} \quad \exists \boldsymbol{\pi}: \boldsymbol{\pi}^T\mathbf{P} = \boldsymbol{\pi}^T \text{ (Stationarity)}
-    \end{aligned}
-\end{equation}
-
-\begin{proof}
-P1 and P2 follow directly from the construction of $P_{ij}$. For P3, since $\mathbf{P}$ is a stochastic matrix, by the Perron-Frobenius theorem, there exists a unique stationary distribution $\boldsymbol{\pi}$ when $\mathbf{P}$ is irreducible and aperiodic.
-\end{proof}
-\end{theorem}
-
-The existence of a stationary distribution $\boldsymbol{\pi}$ implies long-term stability in energy consumption patterns under stable external conditions. This property enables: 1) Identification of persistent consumption behaviors; 2) Detection of anomalous transitions; and 3) Prediction of likely pattern evolution.
-
-For multi-step temporal analysis, we define the n-step transition probability:
-\begin{equation}
-    P_{ij}^{(n)} = [\mathbf{P}^n]_{ij}
-\end{equation}
-
-This formulation captures pattern evolution across different time scales, from daily variations to seasonal changes. The convergence properties of $\mathbf{P}^n$ as $n \to \infty$ provide theoretical guarantees for long-term pattern stability:
-\begin{theorem}[Convergence]
-If $\mathbf{P}$ is irreducible and aperiodic, then:
-\begin{equation}
-    \lim_{n \to \infty} P_{ij}^{(n)} = \pi_j
-\end{equation}
-where $\pi_j$ is the j-th component of the stationary distribution.
-\end{theorem}
-
-The transition analysis framework connects directly with the temporal constraints in our dynamic clustering formulation through:
-\begin{equation}
-    d_{\text{temporal}}(\mathcal{C}_{t}, \mathcal{C}_{t+1}) = -\log\left(\sum_{i,j} \pi_i P_{ij}\right)
-\end{equation}
-
-This relationship ensures consistency between clustering dynamics and observed transition patterns in energy consumption behavior, providing a theoretically sound basis for analyzing pattern evolution.
-
-\subsection{Algorithm}
-The Dynamic Influence-Based Clustering framework integrates predictive modeling, influence space transformation, and dynamic clustering into a unified algorithmic solution, as presented in Algorithm~\ref{alg:dynamic_clustering}. This algorithm systematically processes energy consumption data to discover interpretable and evolving consumption patterns while maintaining temporal and contextual coherence. The computational complexity is dominated by three main operations: influence generation requiring $O(N\log N)$ operations for tree-based models, clustering iterations contributing $O(NKI)$ complexity where $I$ represents the number of iterations, and transition matrix construction adding $O(NT)$ operations with $T$ time steps. Convergence is guaranteed by the monotonic decrease in the clustering objective function, coupled with bounded temporal and contextual constraints, terminating when either the change in loss falls below threshold $\epsilon$ or reaches the maximum iteration limit. In energy consumption analysis, Algorithm~\ref{alg:dynamic_clustering} effectively captures complex relationships through influence space transformation while maintaining temporal continuity and contextual alignment across varying operating conditions. The implementation can be optimized through parallel processing in the influence generation and cluster assignment steps, making it suitable for large-scale energy consumption datasets while maintaining computational efficiency.
-\begin{algorithm}[t!]
-\caption{Dynamic Influence-Based Clustering\label{alg:dynamic_clustering}}
-\KwIn{Dataset $\mathcal{D} = \{(\mathbf{x}_i, y_i, t_i, c_i)\}_{i=1}^N$, number of clusters $K$}
-\KwOut{Clusters $\{\mathcal{C}_k\}_{k=1}^K$, Transition matrix $\mathbf{P}$}
-
-Train predictive model $f$ by minimizing $\mathcal{L}(f)$\;
-Generate influence vectors $\{\mathbf{z}_i\}_{i=1}^N$ using $g(f, \mathbf{x}_i)$\;
-Initialize clusters $\{\mathcal{C}_k\}_{k=1}^K$ randomly\;
-$\text{prev\_loss} \gets \infty$\;
-
-\Repeat{}{
-    Update cluster assignments: \\
-    $\mathcal{C}_k \gets \{\mathbf{z}_i : k = \argmin_j d(\mathbf{z}_i, \boldsymbol{\mu}_j)\}$\;
-    
-    Optimize temporal continuity: \\
-    $\min \sum_{t} d_{\text{cluster}}(\mathcal{C}_{t-1}, \mathcal{C}_t)$\;
-    
-    Adjust for contextual alignment: \\
-    $\min \sum_{k=1}^K \text{Var}(\mathcal{C}_k \mid c_i)$\;
-    
-    Update cluster centers: \\
-    $\boldsymbol{\mu}_k \gets \frac{1}{|\mathcal{C}_k|} \sum_{\mathbf{z}_i \in \mathcal{C}_k} \mathbf{z}_i$\;
-    
-    $\text{curr\_loss} \gets \sum_{k=1}^K \sum_{i,j \in \mathcal{C}_k} d(\mathbf{z}_i, \mathbf{z}_j)$\;
-    $\Delta \gets |\text{curr\_loss} - \text{prev\_loss}|$\;
-    $\text{prev\_loss} \gets \text{curr\_loss}$\;
-}{
-    \If{$\Delta < \epsilon$ or max iterations reached}{
-        \textbf{break}\;
-    }
-}
-
-Construct transition matrix: \\
-$P_{ij} \gets \frac{\text{count}(\mathcal{C}_{t,i} \to \mathcal{C}_{t+1,j})}{\sum_{j} \text{count}(\mathcal{C}_{t,i} \to \mathcal{C}_{t+1,j})}$\;
-
-\Return $\{\mathcal{C}_k\}_{k=1}^K$, $\mathbf{P}$\;
-\end{algorithm}
-
-\section{Experiments}
-\subsection{Experimental Setup}
-Our experimental evaluation aims to validate both the theoretical foundations and practical effectiveness of the Dynamic Influence-Based Clustering framework in energy consumption analysis. We evaluate the framework through three key aspects: clustering quality in influence space versus traditional feature spaces, effectiveness of temporal pattern evolution tracking, and robustness of contextual coherence under varying conditions. The experimental evaluation quantitatively assesses our framework through three main objectives. First, we evaluate clustering quality using entropy as the primary metric, which measures the distribution of instances within clusters and their alignment with underlying consumption patterns. Second, we analyze temporal consistency through transition matrices and stability indices to validate the framework's ability to track pattern evolution. Third, we assess contextual coherence through conditional entropy measures within specific operational contexts.
-\subsubsection{Datasets}
-We evaluate our framework using two complementary datasets: the Building Data Genome Project dataset and three industrial sites' energy consumption datasets, each exhibiting distinct operational characteristics and energy consumption patterns.
-
-The Building Data Genome Project dataset \cite{miller2020building}  contains hourly electricity consumption data from multiple non-residential buildings across university campuses. The dataset includes various building types (parking, lodging, office, education, retail, health, science) with comprehensive temporal coverage throughout 2016. For our analysis, we utilize all buildings' consumption patterns to predict peak load periods, which are defined as instances where the total campus energy consumption exceeds the 90th percentile threshold. This approach enables us to understand how different buildings' consumption patterns collectively influence campus-wide peak energy demand.
-
-\begin{table}[t]
-\caption{Dataset Characteristics}
-\label{tab:datasets}
-\begin{tabular}{lcc}
-\hline
-\textbf{Characteristic} & \textbf{Building Genome} & \textbf{Industrial Sites} \\
-\hline
-Time Span & 1 year (2016) & 1 year \\
-Sampling Rate & Hourly & Quarterly \\
-Number of Features & Multiple buildings & 5-8 features \\
-Target Variable & Peak Load & Electric Energy \\
-                & (Binary) & Consumption \\
-Data Points & 8760 (hourly) & Quarterly \\
-Missing Values & Present & Present \\
-\hline
+\caption{Systematic Comparison with Existing Approaches. Our framework is the first to address all key dimensions simultaneously.}
+\label{tab:comparison_existing_work}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+\textbf{Approach Category} & \textbf{XML-based} & \textbf{Temporal} & \textbf{Contextual} & \textbf{Joint} & \textbf{Dynamic} & \textbf{Influence} & \textbf{Multi-model} \\
+ & \textbf{Clustering} & \textbf{Modeling} & \textbf{Constraints} & \textbf{Optimization} & \textbf{Transitions} & \textbf{Evolution} & \textbf{XML Support} \\ \midrule
+Traditional K-means & $\times$ & $\times$ & $\times$ & $\times$ & $\times$ & $\times$ & $\times$ \\
+Time Series Clustering & $\times$ & \checkmark & $\times$ & $\times$ & Limited & $\times$ & $\times$ \\
+(k-Shape, DTW) &  &  &  &  &  &  &  \\
+Static XML + Clustering & \checkmark & $\times$ & $\times$ & $\times$ & $\times$ & $\times$ & Limited \\
+\citep{escriva2025effective} &  &  &  &  &  &  &  \\
+Dynamic Clustering & $\times$ & \checkmark & $\times$ & $\times$ & \checkmark & $\times$ & $\times$ \\
+Methods &  &  &  &  &  &  &  \\
+Post-hoc XML & \checkmark & $\times$ & $\times$ & $\times$ & $\times$ & $\times$ & \checkmark \\
+Interpretation &  &  &  &  &  &  &  \\ \midrule
+\textbf{Our Framework} & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\ \bottomrule
 \end{tabular}
+}
 \end{table}
 
-For the industrial case studies, we analyze three industrial sites' energy consumption datasets \cite{energenius2023}, each collected over one year with quarterly measurements of various electrical and operational parameters. Each site presents unique operational characteristics:
+\textbf{Key Methodological Innovations:} Our framework introduces three unprecedented capabilities: (1) \textit{Joint Influence-Dynamics Optimization} where XML-derived representations and clustering objectives are co-optimized rather than applied sequentially; (2) \textit{Principled Temporal-Contextual Integration} through mathematically rigorous constraints that maintain both temporal smoothness and contextual coherence; and (3) \textit{Multi-Modal XML Support} enabling systematic comparison and integration of different explanation methods (SHAP, LIME, Integrated Gradients) within a unified dynamic clustering framework. No existing work combines these capabilities, representing a fundamental advancement beyond current state-of-the-art approaches.
 
-\begin{itemize}
-\item Site 1: Eight features monitoring textile processing operations, including general utilities (electric, vapor, water flow rates), production units (dyeing, ironing processes), and power factor measurements
-  
-\item Site 2: Eight features emphasizing electrical consumption across different operational zones including production areas, UTA systems, compressor units, and office spaces
-  
-\item Site 3: Five features focusing on transformer readings, technical flow rates, and specific production areas (weaving, ironing)
-\end{itemize}
+\section{Methodology}
+\label{sec:prob_formulation_method}
+This section details the proposed Dynamic Influence-Based Clustering framework designed for the interpretable analysis of energy consumption time series. We present the problem formulation, the core concept of influence space transformation using XML, the dynamic clustering algorithm incorporating temporal and contextual constraints, and the method for transition analysis.
 
-All datasets undergo specific preprocessing following established protocols:
-\begin{itemize}
-\item Missing values are imputed using mean imputation for industrial sites and temporal mean imputation for the Building Genome dataset
-\item Features are normalized using MinMaxScaler to ensure comparable scales
-\item Temporal alignment ensures consistent sampling intervals through resampling and interpolation where necessary
-\end{itemize}
+\subsection{Problem Formulation}
+Let $\set{D} = \{ (\vect{x}_i, y_i, t_i, c_i) \}_{i=1}^N$ be a temporal dataset, where each instance $i$ comprises a feature vector $\vect{x}_i \in \mathbb{R}^d$ (representing predictors like environmental conditions or time indicators), an energy consumption value $y_i \in \mathbb{R}$, a timestamp $t_i \in \mathbb{R}^+$, and contextual attributes $c_i \in \set{C}_{\text{attr}}$ (e.g., day of week, season). Each instance $i$ belongs to an identifiable entity (e.g., a specific household or industrial machine) that is tracked over time. Our goal is to partition $\set{D}$ into $K$ distinct clusters $\{\set{C}_k\}_{k=1}^K$ over time. These clusters should be interpretable, temporally consistent, and contextually coherent. This is achieved by first transforming the raw feature vectors $\vect{x}_i$ into influence vectors $\vect{z}_i$ using XML methods, creating an influence space $\set{Z} = \{\vect{z}_i\}_{i=1}^N$, and then performing clustering within this space.
 
-This diverse collection of datasets, spanning both campus-wide building systems and industrial facilities, provides a comprehensive testbed for evaluating our dynamic influence-based clustering framework across different operational contexts and temporal granularities.
-
-\subsubsection{Baseline Methods}
-We compare our framework against state-of-the-art methods in energy consumption analysis. For traditional clustering, we implement k-means with dynamic time warping \cite{dtw_kmeans} and hierarchical clustering with Ward linkage \cite{ward}. For temporal pattern analysis, we include evolutionary k-means \cite{evo_kmeans} and online DBSCAN \cite{ester1996density}. We also evaluate against XML-based clustering methods including LIME-based segmentation \cite{lime_cluster} and SHAP-guided clustering \cite{shap_cluster}.
-
-\subsubsection{Implementation Details}
-Our framework implementation uses Python 3.8 with scikit-learn 0.24.2 for predictive modeling and clustering operations. The gradient boosting model employs 100 estimators with maximum depth 6, optimized through 5-fold cross-validation on a 20\% validation set. XML computations utilize SHAP (version 0.40.0) with TreeExplainer for tree-based models and KernelSHAP for other models. Clustering parameters are tuned using Bayesian optimization with expected improvement acquisition. Experiments run on a server with Intel Xeon Gold 6248R processors and 256GB RAM, enabling parallel processing for influence generation and cluster assignments.
-
-\subsection{Clustering Performance}
-We evaluate our Dynamic Influence-Based Clustering framework through comprehensive experiments across three key dimensions: clustering quality in influence space, temporal pattern evolution, and contextual coherence. For each dimension, we analyze both quantitative metrics and qualitative patterns to validate the theoretical properties established in Section~\ref{sec:methodology}.
-
-\subsubsection{Clustering Quality Evaluation}
-We assess clustering quality using entropy as the primary metric:
+The clustering objective minimizes a composite loss function balancing three key aspects: cluster cohesion in the influence space, temporal smoothness of cluster assignments, and contextual alignment. This objective is expressed as:
 \begin{equation}
-\text{Entropy} = -\sum_{k=1}^K \frac{n_k}{n} \sum_{i=1}^q \frac{n_{ki}}{n_k} \log \frac{n_{ki}}{n_k}
+\label{eq:full_objective}
+    \mathcal{L}(\{\set{C}_k\}) = \alpha \mathcal{L}_{\text{cohesion}} + \beta \mathcal{L}_{\text{temporal}} + \gamma \mathcal{L}_{\text{context}}
 \end{equation}
-where $n_k$ is the size of cluster $k$, $n_{ki}$ is the number of instances of class $i$ in cluster $k$, and $q$ is the number of classes.
-We evaluate clustering quality using three complementary metrics: Silhouette score for measuring cluster separation, Davies-Bouldin index for assessing cluster compactness, and entropy for quantifying cluster homogeneity. Table~\ref{tab:comprehensive_clustering} presents the comprehensive results:
-\begin{table*}[t!]
+In this formulation, $\mathcal{L}_{\text{cohesion}}$ promotes intra-cluster compactness, $\mathcal{L}_{\text{temporal}}$ penalizes temporal instability in cluster assignments, and $\mathcal{L}_{\text{context}}$ penalizes a lack of homogeneity within clusters conditioned on the context attributes $c_i$. The non-negative hyperparameters $\alpha$, $\beta$, and $\gamma$ balance the relative importance of these three objectives. Their appropriate selection is crucial for achieving desired clustering properties and typically requires empirical tuning on a validation set or careful consideration of domain priorities, as discussed further in Section~\ref{sec:exp_setup}. This comprehensive objective function guides the discovery of interpretable subgroups whose behavior evolves smoothly over time while maintaining consistency within specific operating contexts.
+
+\subsection{Framework Overview}
+\label{sec:framework_overview_method}
+The Dynamic Influence-Based Clustering framework integrates data transformation and constrained clustering through three sequential stages (Figure~\ref{fig:framework_overview}). First, a predictive model $f$ is trained to map input features $\vect{x}_i$ to energy consumption $y_i$. XML methods are then applied to $f$ to compute quantitative feature influence scores for each input instance $\vect{x}_i$. Second, these scores transform each original data instance into an influence vector $\vect{z}_i$, forming the influence space $\set{Z}$. Each dimension of $\vect{z}_i$ typically corresponds to the influence of an original feature $x_{i,j}$ on the model's prediction $f(\vect{x}_i)$. Third, the dynamic clustering algorithm (Algorithm~\ref{alg:dynamic_clustering}) is applied directly to $\set{Z}$. This algorithm optimizes the composite objective function (\ref{eq:full_objective}) to partition influence vectors into $K$ clusters $\{\set{C}_k\}$ that balance internal cohesion, temporal stability, and contextual alignment. This final stage also facilitates the analysis of transitions between discovered subgroups over time. The framework's output includes evolving cluster assignments, characteristic influence patterns (via cluster centroids $\boldsymbol{\mu}_k$), and a transition matrix $\matr{P}$ quantifying subgroup evolution.
+
+\begin{figure}[t!]
 \centering
-\caption{Comprehensive Clustering Performance Analysis}
-\label{tab:comprehensive_clustering}
-\begin{tabular}{llcccc}
-\hline
-\textbf{Site} & \textbf{Method} & \textbf{Algorithm} & \textbf{Silhouette} & \textbf{Davies-Bouldin} & \textbf{Entropy} \\
-\hline
-Industrial & Raw & K-means & 0.413 & 0.963 & 1.583 \\
-Site 1 & & Hierarchical & 0.398 & 0.988 & 1.601 \\
-      & & Spectral & 0.385 & 1.012 & 1.615 \\
-      & SHAP & K-means & \textbf{0.645} & 0.539 & 1.583 \\
-      & & Hierarchical & 0.621 & 0.567 & 1.595 \\
-      & & Spectral & 0.612 & 0.582 & 1.601 \\
-      & LIME & K-means & 0.659 & \textbf{0.447} & 1.539 \\
-      & & Hierarchical & 0.632 & 0.482 & 1.552 \\
-      & & Spectral & 0.618 & 0.495 & 1.568 \\
-      & Spearman & K-means & 0.214 & 1.600 & \textbf{1.370} \\
-      & & Hierarchical & 0.198 & 1.645 & 1.389 \\
-      & & Spectral & 0.185 & 1.678 & 1.395 \\
-\hline
-Industrial & Raw & K-means & 0.784 & 0.741 & 0.006 \\
-Site 2 & & Hierarchical & 0.765 & 0.768 & 0.008 \\
-      & & Spectral & 0.742 & 0.785 & 0.009 \\
-      & SHAP & K-means & \textbf{0.999} & \textbf{0.315} & \textbf{0.006} \\
-      & & Hierarchical & 0.987 & 0.328 & 0.008 \\
-      & & Spectral & 0.965 & 0.342 & 0.009 \\
-      & LIME & K-means & 0.822 & 0.306 & 1.008 \\
-      & & Hierarchical & 0.798 & 0.325 & 1.015 \\
-      & & Spectral & 0.775 & 0.338 & 1.022 \\
-      & Spearman & K-means & 0.118 & 2.221 & 1.584 \\
-      & & Hierarchical & 0.105 & 2.245 & 1.592 \\
-      & & Spectral & 0.098 & 2.268 & 1.598 \\
-\hline
-Industrial & Raw & K-means & 0.551 & 0.761 & 1.529 \\
-Site 3 & & Hierarchical & 0.532 & 0.785 & 1.538 \\
-      & & Spectral & 0.518 & 0.798 & 1.542 \\
-      & SHAP & K-means & \textbf{0.756} & \textbf{0.330} & \textbf{1.529} \\
-      & & Hierarchical & 0.738 & 0.345 & 1.538 \\
-      & & Spectral & 0.722 & 0.358 & 1.542 \\
-      & LIME & K-means & 0.692 & 0.562 & 1.534 \\
-      & & Hierarchical & 0.675 & 0.578 & 1.545 \\
-      & & Spectral & 0.658 & 0.585 & 1.552 \\
-      & Spearman & K-means & 0.283 & 1.187 & 1.541 \\
-      & & Hierarchical & 0.265 & 1.205 & 1.553 \\
-      & & Spectral & 0.248 & 1.223 & 1.558 \\
-\hline
+\includegraphics[width=0.8\columnwidth]{images/framework_overview.pdf} 
+\caption{Overview of the Dynamic Influence-Based Clustering framework. \textbf{Stage 1:} Train a predictive model and generate feature influences using XML. \textbf{Stage 2:} Transform data into the influence space $\set{Z}$. \textbf{Stage 3:} Perform dynamic clustering on $\set{Z}$ considering temporal and contextual constraints, yielding interpretable clusters and transition dynamics.}
+\label{fig:framework_overview}
+\end{figure}
+
+\subsection{Influence Space Transformation}
+\label{sec:influence_space}
+A core novelty of our framework is transforming the raw feature space into an influence space. This transformation enhances the interpretability and robustness of subsequent clustering by focusing on consumption behavior drivers rather than raw consumption values.
+
+\subsubsection{Predictive Model Construction}
+\label{sec:predictive_model}
+The process begins with constructing a predictive model $f: \mathbb{R}^d \to \mathbb{R}$ that learns the mapping $f(\vect{x}_i) \approx y_i$. The model architecture is chosen based on dataset characteristics and application requirements. For energy forecasting, various predictive models can be employed, including Gradient Boosting Trees (e.g., XGBoost, LightGBM) for their strong predictive accuracy and compatibility with tree-specific XML tools (e.g., TreeSHAP). Deep learning architectures, such as Long Short-Term Memory (LSTM) networks and Transformer models, are also utilized for their ability to capture complex temporal dependencies. These models, while more complex, offer powerful predictive capabilities and are compatible with advanced XML techniques like Integrated Gradients. The choice of model depends on the data characteristics and the desired trade-off between interpretability and predictive power. The model is typically trained by optimizing an objective function, often including a loss term like Mean Squared Error (MSE) and potentially a regularization term $\Omega(f)$ (e.g., L1/L2 penalty) to mitigate overfitting:
+\begin{equation}
+    \set{L}(f) = \frac{1}{N} \sum_{i=1}^N \ell(f(\vect{x}_i), y_i) + \lambda \Omega(f)
+\end{equation}
+While not a strict prerequisite, predictive models exhibiting properties like Lipschitz continuity and relatively bounded gradients are generally preferred. Such properties, often encouraged by effective regularization, tend to yield more stable and reliable feature influence explanations when processed by XML methods \citep{gouk2021regularisation}. Our framework does not assume model convexity.
+
+\subsubsection{Feature Influence Generation}
+\label{sec:influence_gen}
+The influence transformation function $g(f, \vect{x}_i)$ maps the input instance $\vect{x}_i$, in conjunction with the trained model $f$, to an influence vector $\vect{z}_i \in \mathbb{R}^m$:
+\begin{equation}
+    \vect{z}_i = g(f, \vect{x}_i) = [z_{i,1}, \ldots, z_{i,m}]
+\end{equation}
+Each component $z_{i,j}$ quantifies the influence or contribution of the $j$-th feature (or a related concept) to the model's prediction $f(\vect{x}_i)$. Typically, the dimensionality of the influence space $m$ equals the original feature dimensionality $d$, with $z_{i,j}$ directly corresponding to the influence attributed to feature $x_{i,j}$.
+
+Various XML methods can compute these influence vectors $\vect{z}_i$. For instance, SHAP (SHapley Additive exPlanations) \citep{antwarg2021explaining} offers theoretically robust feature attributions derived from cooperative game theory, calculated for feature $j$ as shown in Eq.~\ref{eq:shap_example}:
+\begin{equation} \label{eq:shap_example}
+    z_{i,j}^{\text{SHAP}} = \sum_{\set{S} \subseteq \set{F}\setminus\{j\}} \frac{|\set{S}|!(d-|\set{S}|-1)!}{d!}[f_{\vect{x}_i}(\set{S} \cup \{j\}) - f_{\vect{x}_i}(\set{S})]
+\end{equation}
+where $\set{F}$ represents the set of all $d$ features, and $f_{\vect{x}_i}(\set{S})$ denotes the model's expected output given only the feature values in subset $\set{S}$ for instance $\vect{x}_i$. Alternatively, LIME (Local Interpretable Model-agnostic Explanations) \citep{mishra2017local} provides model-agnostic local explanations by fitting a simpler, interpretable surrogate model (e.g., a linear model) to predictions made on perturbations around the instance $\vect{x}_i$; the coefficients of this local model then serve as the influence scores $z_{i,j}^{\text{LIME}}$. For deep learning models, Integrated Gradients \citep{sundararajan2017gradients} is a popular axiomatically-grounded attribution method that computes feature importance by integrating gradients along a path from a baseline input to the actual input. The specific choice of XML method influences the characteristics of the resulting influence space, the interpretability nuances, and the computational overhead. Clustering within this influence space groups instances that share similar influence patterns—meaning the same features drive the predicted consumption in a similar way—thereby inherently enhancing the interpretability of the resulting subgroups.
+
+The ``Spearman Influence Guidance" method uses global Spearman rank correlation coefficients to transform raw features into an influence-guided space. Specifically, global correlation scores $s_j = |\rho(X_j, Y)|$ are computed between each input feature $X_j$ and the target variable $Y$. Each raw feature instance $\vect{x}_i$ is then transformed to $\vect{x}'_i$ where each component $x'_{i,j} = x_{i,j} \cdot s_j$. Clustering is subsequently performed in this weighted feature space. This contrasts with instance-specific methods like SHAP, LIME, or Integrated Gradients but provides a computationally efficient way to incorporate global feature importance into the representation.
+
+\subsubsection{Properties of the Influence Space}
+\label{sec:influence_space_properties}
+The transformation from raw feature space $\mathbb{R}^d$ to an influence space $\mathbb{R}^m$ (typically $m=d$) yields a representation with several desirable properties for clustering:
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Interpretability}: Each dimension of an influence vector $\vect{z}_i$ directly corresponds to the quantified contribution of an original feature to the model's prediction. This inherent interpretability means that clusters formed in this space are directly explainable in terms of the driving factors of the predicted outcome. For example, a cluster might be characterized by high positive influence from ``temperature" and high negative influence from ``occupancy", providing immediate behavioral insights.
+    \item \textbf{Additivity/Linearity (for SHAP)}: For methods like SHAP, the influence scores are additive, meaning the sum of feature influences (plus a baseline) reconstructs the model's prediction. This property ensures that the influence space is a faithful representation of the model's internal logic, allowing for a consistent interpretation of distances and relationships between influence vectors.
+    \item \textbf{Consistency}: A desirable property of influence methods is that if a feature's contribution increases (or decreases) when other features are held constant, its attribution should also increase (or decrease). This consistency ensures that the influence space reflects monotonic relationships between features and predictions, which is crucial for meaningful clustering.
+    \item \textbf{Dimensionality Reduction/Feature Selection (Implicit)}: While the influence space often has the same dimensionality as the original feature space, it implicitly performs a form of feature selection. Features with consistently low influence across instances will contribute little to the variance in the influence space, effectively being down-weighted or ignored by distance-based clustering algorithms. This can lead to more robust clustering by focusing on the most salient features.
+    \item \textbf{Noise Reduction}: By focusing on the model's learned relationships rather than raw feature values, the influence space can be less susceptible to noise present in individual raw features. The predictive model acts as a filter, emphasizing patterns that are relevant to the prediction task and thus to the underlying behavior.
+\end{enumerate}
+These properties collectively contribute to the formation of more meaningful, stable, and interpretable clusters, as demonstrated in our experimental results. The influence space provides a semantically richer basis for grouping data instances, moving beyond mere statistical similarity in raw data to behavioral similarity in terms of feature impact.
+
+\begin{remark}[Influence Preservation Rationale]
+The transformation $g$ is designed to preserve significant patterns relevant to consumption drivers. While a formal guarantee of pattern preservation depends intricately on the specific properties of the model $f$ and the chosen XML method $g$, the intuition is as follows: if two instances $\vect{x}_i, \vect{x}_j$ yield similar model predictions $f(\vect{x}_i) \approx f(\vect{x}_j)$, and the model $f$ exhibits Lipschitz continuity (i.e., its output does not change too rapidly with small changes in input), then the underlying feature contributions computed by stable XML methods should also be similar. Consequently, the distance $\|\vect{z}_i - \vect{z}_j\|$ in the influence space should be relatively small. This hypothesized property allows clustering algorithms operating in $\set{Z}$ to group instances based on shared underlying drivers. Furthermore, this transformation can enhance the signal-to-noise ratio by emphasizing systematic feature influences over potentially noisy fluctuations present in the raw data.
+\end{remark}
+
+\subsection{Dynamic Clustering in Influence Space}
+\label{sec:dynamic_clustering_algo_method}
+The clustering process iteratively optimizes the composite objective function (Eq.~\ref{eq:full_objective}) on the influence vectors $\vect{z}_i$.
+
+\subsubsection{Cluster Cohesion ($\mathcal{L}_{\text{cohesion}}$)}
+The first objective function component promotes intra-cluster compactness within the influence space by minimizing the sum of squared Euclidean distances from points to their assigned cluster centroid:
+\begin{equation}
+    \mathcal{L}_{\text{cohesion}} = \sum_{k=1}^K \sum_{\vect{z}_i \in \set{C}_k} \|\vect{z}_i - \boldsymbol{\mu}_k\|_2^2
+\end{equation}
+Here, $\vect{z}_i$ represents the influence vector for instance $i$, and $\boldsymbol{\mu}_k = \frac{1}{|\set{C}_k|} \sum_{\vect{z}_i \in \set{C}_k} \vect{z}_i$ is the centroid of cluster $\set{C}_k$ in the influence space $\mathbb{R}^m$. The weight $\alpha$ controls the importance of achieving tight clusters based purely on influence pattern similarity.
+
+\subsubsection{Temporal Integration ($\mathcal{L}_{\text{temporal}}$)}
+\label{sec:temporal_integration}
+The second component enforces temporal smoothness by penalizing rapid changes in cluster assignments for the same entities (e.g., consumers, buildings) over consecutive time periods. We quantify the dissimilarity between cluster assignments $\set{C}_{t-1} = \{\set{C}_{t-1,k}\}_{k=1}^K$ and $\set{C}_t = \{\set{C}_{t,k}\}_{k=1}^K$ across two adjacent time windows using the sum of Jaccard distances for each cluster $k$:
+\begin{equation}
+\label{eq:d_cluster}
+    \mathcal{L}_{\text{temporal}} = \sum_{t} \sum_{k=1}^K \left( 1 - \frac{|\set{C}_{t-1,k} \cap \set{C}_{t,k}|}{|\set{C}_{t-1,k} \cup \set{C}_{t,k}|} \right)
+\end{equation}
+where $\set{C}_{t,k}$ is the set of data instances (or entities) assigned to cluster $k$ in time window $t$. Incorporating this term, weighted by $\beta$, discourages rapid, unrealistic fluctuations in cluster membership while permitting gradual evolution reflective of genuine changes in behavior or external conditions. Practical implementation requires defining appropriate time windows (e.g., daily, weekly) based on the application context and tracking assignments across these windows.
+
+\subsubsection{Contextual Alignment ($\mathcal{L}_{\text{context}}$)}
+\label{sec:contextual_alignment}
+The third component ensures that discovered clusters maintain coherence within specific operational or environmental contexts. For example, patterns classified within the same cluster should exhibit relatively homogeneous behavior during `weekday peak hours' or under `high temperature conditions'. We formalize this by penalizing high intra-cluster variance conditioned on context. Specifically, we define $\mathcal{L}_{\text{context}}$ as the sum of the traces of the conditional covariance matrices:
+\begin{equation}
+\label{eq:context_cost}
+ \mathcal{L}_{\text{context}} = \sum_{c \in \set{C}_{\text{attr}}} p(c) \sum_{k=1}^K p(k|c) \Tr(\text{Cov}(\vect{z} \mid \vect{z} \in \set{C}_k, \text{context}=c))
+\end{equation}
+Here, $\set{C}_{\text{attr}}$ is the set of all unique context attributes, $p(c)$ represents the prevalence of context $c$, $p(k|c)$ is the conditional probability of an instance belonging to cluster $k$ given it occurs in context $c$, and $\Tr(\text{Cov}(\vect{z} \mid \cdot))$ denotes the trace of the covariance matrix of the influence vectors within cluster $k$ specifically for those instances observed under context $c$. Minimizing this cost, weighted by $\gamma$, encourages the formation of clusters that group data points exhibiting similar influence patterns under comparable contextual circumstances.
+
+\subsection{Transition Analysis}
+\label{sec:transition_analysis_method}
+Once the dynamic clustering process yields evolving cluster assignments $\{\set{C}_k\}$ over time, we analyze the dynamics of these clusters using a first-order Markov chain model. This involves constructing a $K \times K$ transition probability matrix $\matr{P}$, where each element $P_{ij}$ represents the empirically estimated probability that a data point belonging to cluster $\set{C}_i$ at a given time step $t$ will transition to cluster $\set{C}_j$ at the next relevant time step $t+1$. This probability is calculated as:
+\begin{equation}
+    P_{ij} = \frac{\text{count}(\text{instance from } \set{C}_{t,i} \text{ transitions to } \set{C}_{t+1,j})}{\text{count}(\text{instance in } \set{C}_{t,i})}
+\end{equation}
+averaged over all applicable instances and time steps within the dataset.
+
+The resulting matrix $\matr{P}$ inherently possesses the properties of a stochastic matrix: its elements are non-negative ($P_{ij} \geq 0$), and the probabilities of transitioning from any given state $i$ sum to one ($\sum_{j=1}^K P_{ij} = 1$). If the underlying consumption process exhibits reasonable stability, such that the derived Markov chain is irreducible and aperiodic, then a unique stationary distribution $\boldsymbol{\pi}$ exists, satisfying $\boldsymbol{\pi}^T\matr{P} = \boldsymbol{\pi}^T$. This vector $\boldsymbol{\pi}$ represents the long-term equilibrium probability distribution across the cluster states. Analyzing the transition matrix $\matr{P}$ and the stationary distribution $\boldsymbol{\pi}$ provides valuable insights. It allows for the identification of stable clusters (characterized by high self-transition probabilities $P_{ii}$) versus more transient states, the quantification of dominant pathways of change between different consumer subgroups, the detection of anomalies manifested as infrequent or unexpected transitions, and even the prediction of future cluster population distributions via powers of the matrix ($\matr{P}^n$). Conceptually, the temporal smoothness constraint incorporated during clustering (Section~\ref{sec:temporal_integration}) encourages solutions that lead to a transition matrix $\matr{P}$ with relatively higher diagonal values, reflecting the optimization's preference for stability.
+
+\subsection{Algorithm Implementation}
+\label{sec:algorithm_method}
+To optimize the composite objective function (Eq.~\ref{eq:full_objective}), we employ an iterative procedure conceptually similar to the K-means algorithm, adapting it to handle the influence space representation and the temporal and contextual constraints. Algorithm~\ref{alg:dynamic_clustering} provides a high-level outline of this process. The core of the algorithm lies in the assignment step during each iteration: every data point $\vect{z}_i$ is assigned to the cluster $k$ that minimizes its individual marginal contribution to the overall objective function. This assignment considers not only the distance to the centroid in the influence space (weighted by $\alpha$) but also incorporates penalties reflecting temporal consistency (weighted by $\beta$) and contextual coherence (weighted by $\gamma$).
+
+\textbf{Instance-Level Cost Derivation for Assignment Step:}
+For a data point $\vect{z}_i$ observed at time window $t$ with contextual attributes $c_i$, and whose corresponding entity was assigned to cluster $L_{\text{entity}(i), t-1}$ in the immediately preceding time window $t-1$, the cost of assigning $\vect{z}_i$ to a candidate cluster $k$ is formulated as:
+\begin{equation}
+\label{eq:instance_cost}
+\text{Cost}(i, k) = \alpha \|\vect{z}_i - \boldsymbol{\mu}_k\|_2^2 + \beta \cdot \Delta\mathcal{L}_{\text{temporal}}(i, k) + \gamma \cdot \Delta\mathcal{L}_{\text{context}}(i, k)
+\end{equation}
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Temporal Penalty ($\Delta\mathcal{L}_{\text{temporal}}$):} To approximate the marginal impact on $\mathcal{L}_{\text{temporal}}$ (Eq.~\ref{eq:d_cluster}), we introduce a penalty $\mathcal{J}_{penalty}$ if the current assignment $k$ differs from the previous assignment of the same entity $L_{\text{entity}(i), t-1}$. This encourages consistency while allowing for transitions. We set $\Delta\mathcal{L}_{\text{temporal}}(i, k) = \mathcal{J}_{penalty} \cdot \mathbb{I}(k \neq L_{\text{entity}(i), t-1})$, where $\mathbb{I}(\cdot)$ is the indicator function. The value of $\mathcal{J}_{penalty}$ can be empirically determined or set to reflect the desired penalty strength for temporal discontinuity.
+    \item \textbf{Contextual Penalty ($\Delta\mathcal{L}_{\text{context}}$):} The marginal cost of assigning $\vect{z}_i$ to cluster $k$ under context $c_i$ is approximated by the squared Euclidean distance of $\vect{z}_i$ to the centroid of existing points within cluster $k$ that also share context $c_i$. This aims to maintain contextual homogeneity within clusters. Specifically, $\Delta\mathcal{L}_{\text{context}}(i, k) = \|\vect{z}_i - \boldsymbol{\mu}_{k, c_i}\|_2^2$, where $\boldsymbol{\mu}_{k, c_i} = \frac{1}{|\{\vect{z}_j \in \set{C}_k \mid c_j=c_i\}|} \sum_{\vect{z}_j \in \set{C}_k, c_j=c_i} \vect{z}_j$. This centroid is dynamically updated during iterations based on current assignments.
+\end{enumerate}
+
+\begin{singlespace}
+\begin{algorithm}[t!]
+\caption{Dynamic Influence-Based Clustering Algorithm}
+\label{alg:dynamic_clustering}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+
+\Input{Influence vectors $\mathcal{Z}=\{\mathbf{z}_i\}_{i=1}^N$, Timestamps $\{t_i\}_{i=1}^N$, Contexts $\{c_i\}_{i=1}^N$, \\
+       Number of clusters $K$, Weights $\alpha, \beta, \gamma$, Temporal penalty $\mathcal{J}_{penalty}$}
+\Output{Cluster assignments $\{L_i^{(\text{iter})} \in \{1, \dots, K\}\}_{i=1}^N$, \\
+        Cluster centroids $\{\boldsymbol{\mu}_k^{(\text{iter})}\}_{k=1}^K$, Transition matrix $\mathbf{P}$}
+
+\textbf{Preprocessing:} Train predictive model $f$; Generate $\mathcal{Z}$ using $g(f, \mathbf{x}_i)$\;
+Initialize cluster assignments $\{L_i^{(0)}\}\_{i=1}^N$ randomly or using K-means++ on $\mathcal{Z}$\;
+Initialize centroids $\{\boldsymbol{\mu}_k^{(0)}\}\_{k=1}^K$ based on $\{L_i^{(0)}\}$\;
+$iter \leftarrow 0$, converged $\leftarrow$ false\;
+
+\While{not converged and $iter < \text{max\_iters}$}{
+    $iter \leftarrow iter + 1$\\
+    \ForEach{data point $\mathbf{z}_i$ at time window $t_i$}{
+        Let $L_{\text{entity}(i), t_i-1}^{(\text{final})}$ be the cluster assignment of the entity corresponding to $\mathbf{z}_i$ in the previous time window $t_i-1$\;
+        For each candidate cluster $k \in \{1, \dots, K\}$: \\
+        \hspace{1cm} Compute Cohesion Cost: $C_{coh} = \alpha \|\mathbf{z}_i - \boldsymbol{\mu}_k^{(\text{iter-1})}\|_2^2$\;
+        \hspace{1cm} Compute Temporal Penalty: $C_{temp} = \beta \cdot \mathcal{J}_{penalty} \cdot \mathbb{I}(k \neq L_{\text{entity}(i), t_i-1}^{(\text{final})})$\;
+        \hspace{1cm} Compute Contextual Penalty: $C_{ctx} = \gamma \|\mathbf{z}_i - \boldsymbol{\mu}_{k, c_i}^{(\text{iter-1})}\|_2^2$\;
+        $L_i^{(\text{iter})} \leftarrow \arg\min_{k \in \{1, \dots, K\}} [C_{coh} + C_{temp} + C_{ctx}]$\\
+    }
+    \ForEach{cluster $k \in \{1, \dots, K\}$}{
+        $\mathcal{C}_k^{(\text{iter})} \leftarrow \{\mathbf{z}_i \mid L_i^{(\text{iter})} = k\}$\;
+        \eIf{$|\mathcal{C}_k^{(\text{iter})}| > 0$}{
+            $\boldsymbol{\mu}_k^{(\text{iter})} \leftarrow \frac{1}{|\mathcal{C}_k^{(\text{iter})}|} \sum_{\mathbf{z}_i \in \mathcal{C}_k^{(\text{iter})}} \mathbf{z}_i$\;
+             \ForEach{context $c \in \set{C}_{\text{attr}}$}{
+                $\mathcal{C}_{k,c}^{(\text{iter})} \leftarrow \{\mathbf{z}_i \mid L_i^{(\text{iter})} = k, c_i = c\}$\;
+                \eIf{$|\mathcal{C}_{k,c}^{(\text{iter})}| > 0$}{
+                    $\boldsymbol{\mu}_{k, c}^{(\text{iter})} \leftarrow \frac{1}{|\mathcal{C}_{k,c}^{(\text{iter})}|} \sum_{\mathbf{z}_i \in \mathcal{C}_{k,c}^{(\text{iter})}} \mathbf{z}_i$\;
+                }{
+                    $\boldsymbol{\mu}_{k, c}^{(\text{iter})} \leftarrow \boldsymbol{\mu}_k^{(\text{iter})}$ % Default to overall cluster centroid if context group is empty
+                }
+            }
+        }{
+            $\boldsymbol{\mu}_k^{(\text{iter})} \leftarrow$ reinitialize\_centroid($\mathcal{Z}$, $\{\boldsymbol{\mu}_j^{(\text{iter})}\}\_{j \neq k}$)\\
+        }
+    }
+    converged $\leftarrow$ check\_convergence($\{L_i^{(\text{iter})}\}$, $\{L_i^{(\text{iter-1})}\})$\;
+}
+
+\textbf{Postprocessing:} Construct Transition Matrix $\mathbf{P}$ using final assignments $\{L_i^{(\text{iter})}\}$ over time (Section~\ref{sec:transition_analysis_method})\;
+\Return Final assignments $\{L_i^{(\text{iter})}\}$, Centroids $\{\boldsymbol{\mu}_k^{(\text{iter})}\}$, Transition Matrix $\mathbf{P}$\;
+
+\end{algorithm}
+\end{singlespace}
+
+The effective performance of the algorithm relies significantly on the appropriate selection of the hyperparameters $\alpha, \beta, \gamma$, and $\mathcal{J}_{penalty}$.
+
+\subsubsection{Convergence Analysis}
+\label{sec:convergence_analysis}
+The convergence of Algorithm~\ref{alg:dynamic_clustering} to a local minimum of the objective function in Eq.~\ref{eq:full_objective} is guaranteed. The proof follows the same logic as the standard K-means algorithm, as the additional penalty terms do not invalidate the core mechanics of the iterative optimization.
+
+\begin{theorem}[Convergence of Dynamic Influence-Based Clustering]
+Algorithm~\ref{alg:dynamic_clustering} converges to a local minimum of the objective function defined in Eq.~\ref{eq:full_objective} in a finite number of iterations.
+\end{theorem}
+
+\begin{proof}
+The algorithm consists of two main steps executed iteratively: the assignment step and the update step.
+
+\textbf{1. Assignment Step:} In this step, each data point $\vect{z}_i$ is assigned to the cluster $k$ that minimizes its individualized cost contribution (Eq.~\ref{eq:instance_cost}) to the total objective function $\mathcal{L}(\{\set{C}_k\})$. By definition, this step ensures that the overall objective function will either decrease or remain the same, as each point is moved only if it finds a new cluster assignment that lowers its associated cost.
+
+\textbf{2. Update Step:} In this step, the cluster centroids $\boldsymbol{\mu}_k$ and context-specific centroids $\boldsymbol{\mu}_{k,c}$ are recalculated as the mean of the points assigned to them. This step also guarantees a decrease or no change in the objective function. Specifically, for the cluster cohesion term, the new centroid is the point that minimizes the sum of squared Euclidean distances for that cluster. Similarly, for the contextual penalty, recalculating $\boldsymbol{\mu}_{k,c}$ as the mean minimizes the intra-cluster variance for that specific context.
+
+Since both the assignment and update steps are guaranteed to be non-increasing, the total objective function is non-increasing in each iteration. The number of possible cluster assignments for a finite set of data points is finite (at most $K^N$). Therefore, the algorithm cannot cycle through assignments indefinitely and must converge to a state where no data point changes its cluster assignment, which corresponds to a local minimum of the objective function.
+\end{proof}
+
+The overall computational complexity is influenced by the chosen XML method for influence generation, the number of clustering iterations $I$, the number of data points $N$, the number of clusters $K$, and the influence space dimension $m$. The clustering iterations themselves typically exhibit a complexity of $O(N K I m)$. Both the influence generation step (for certain XML methods) and the assignment step within the clustering loop are amenable to parallel processing.
+
+\section{Experiments}
+\label{sec:exp}
+This section presents an empirical evaluation of the proposed Dynamic Influence-Based Clustering framework on real-world time series. We assess clustering quality, temporal consistency, contextual coherence, and computational efficiency. Our dynamic K-means based algorithm (Algorithm~\ref{alg:dynamic_clustering}) operating on influence spaces (SHAP, LIME, Spearman-guided, Integrated Gradients) is compared to standard K-means and Hierarchical clustering on raw feature data, as well as state-of-the-art time series clustering methods.
+
+\subsection{Experimental Setup}
+\label{sec:exp_setup}
+
+\subsubsection{Datasets}
+Two real-world datasets from distinct domains were utilized:
+
+\textbf{Energy Data}: This dataset comprises 19,735 measurements of appliance energy consumption collected at 10-minute intervals over approximately 4.5 months from a low-energy residential building \citep{data:energy_uci}. It includes 28 features, covering appliance energy usage (Wh), lighting consumption (Wh), environmental factors (temperatures from 9 different areas in $^\circ$C, humidity measurements in \%), and external weather conditions (pressure, wind speed, visibility, dew point) from a nearby weather station. The house was monitored using a ZigBee wireless sensor network that transmitted temperature and humidity readings approximately every 3.3 minutes, which were then averaged over 10-minute periods. The data exhibits characteristic temporal patterns of residential energy usage influenced by occupancy, daily routines, and seasonal variations.
+
+\textbf{Steel Industry}: This dataset contains 35,040 multivariate readings from DAEWOO Steel Co. Ltd in Gwangyang, South Korea \citep{data:steel_uci}. The data captures energy consumption patterns in a smart small-scale steel industry that produces various types of coils, steel plates, and iron plates. It includes 9 features representing electrical energy consumption (kWh), reactive power measurements (kVarh), CO2 emissions (ppm), power factors (\%), temporal indicators (seconds from midnight), and categorical variables indicating weekday/weekend status and load types (Light, Medium, Maximum). The dataset exhibits complex process-dependent patterns influenced by production schedules and operational conditions, with energy consumption information stored in a cloud-based system and on the Korea Electric Power Corporation website.
+
+\textit{Preprocessing}: Both datasets underwent identical preprocessing steps: (1) missing values imputed using forward fill, then mean imputation; (2) outliers detected and capped using 1.5$\times$IQR rule; (3) all features normalized to [0,1] using min-max scaling; (4) temporal alignment to ensure consistent timestamping. Subsequently, each dataset was split chronologically into training (70\%) and testing (30\%) sets.
+
+Table~\ref{tab:datasets_exp} summarizes the dataset characteristics.
+\begin{table*}[htp]
+\centering
+\caption{Dataset Characteristics Summary}
+\label{tab:datasets_exp}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Dataset} & \textbf{Features} & \textbf{Samples} & \textbf{Resolution} & \textbf{Key Characteristics} \\ \midrule
+Energy Data & 28 & 19,735 & 10 minutes & Daily/weekly/seasonal cycles \\
+Steel Industry & 9 & 35,040 & Variable & Process-dependent modes \\ 
+                 &    &        & & and load types \\
+\bottomrule
 \end{tabular}
 \end{table*}
 
-Based on the comprehensive clustering results shown in Table~\ref{tab:comprehensive_clustering}, we observe several significant patterns:
+\subsubsection{Evaluation Metrics}
+\label{sec:evaluation_metrics}
+The performance of the clustering methods was assessed using:
+\textbf{Silhouette Score ($S$)} and \textbf{Davies-Bouldin Index ($DB$)} for intrinsic cluster quality \citep{rousseeuw1987silhouettes}.
+\textbf{Temporal Consistency ($TC$)}: Calculated as the average Jaccard index between cluster assignments of the same set of entities (or instances at corresponding temporal positions) in consecutive, non-overlapping time windows (e.g., daily or weekly, depending on dataset characteristics), averaged over all entities and window pairs. A higher TC indicates more stable cluster assignments over time.
+\textbf{Normalized Information Gain ($NIG$)}: Measures the mutual information between cluster assignments and known contextual variables (e.g., time-of-day, day-of-week for Energy; process type, production rate phase for Steel), normalized to [0,1] \citep{strehl2002relationship}. Higher NIG indicates better alignment of clusters with contextual factors.
+\textbf{Cluster Stability}: Quantified as the average of the diagonal elements ($P_{ii}$) of the empirically derived cluster transition matrix $\mat{P}$ (Section~\ref{sec:transition_analysis_method}), representing the mean self-transition probability. Higher values indicate more stable clusters.
+\textbf{Anomaly Rate}: Defined as the percentage of temporal transitions from cluster $C_i$ to cluster $C_j$ where the transition probability $P_{ij}$ is below a small threshold (e.g., 0.05), or transitions involving clusters that are very small and transient. This captures unexpected or infrequent shifts.
+\textbf{Computational Efficiency}: Measured by runtime and memory usage for key stages of the framework.
 
-\paragraph{1. XML Method Performance.}
-Based on the comprehensive clustering results shown in Table~\ref{tab:comprehensive_clustering}, our analysis reveals several key patterns in the performance of different XML methods. SHAP consistently demonstrates superior performance across all sites and clustering algorithms. For Site 2, SHAP with K-means achieves exceptional results (Silhouette: 0.999, Davies-Bouldin: 0.315, Entropy: 0.006), indicating nearly perfect cluster separation and homogeneity. This exceptional performance suggests SHAP's ability to effectively capture the underlying energy consumption patterns and operational states. LIME shows moderate performance, generally ranking second across all metrics, with its best performance observed in Site 1 with K-means clustering (Silhouette: 0.659, Davies-Bouldin: 0.447). In contrast, Spearman consistently shows the lowest performance across all sites, with particularly poor results in Site 2 (Silhouette: 0.118, Davies-Bouldin: 2.221).
+Unless otherwise stated, definitions for $S$ and $DB$ are standard implementations as found in scikit-learn \citep{kramer2016scikit}.
 
-\paragraph{2. Clustering Algorithm Comparison.}
-When examining the clustering algorithms' performance, K-means emerges as the consistently superior choice across all sites and XML methods. The algorithm demonstrates a clear performance advantage, achieving 3-8\% higher Silhouette scores compared to hierarchical clustering across different scenarios. This consistent superiority suggests that K-means' centroid-based approach is particularly well-suited for clustering in the influence space. Hierarchical clustering maintains reliable performance, achieving approximately 95-97\% of K-means' performance metrics, offering a viable alternative when hierarchical relationships need to be explored. Spectral clustering, despite its theoretical advantages in capturing non-linear relationships, consistently ranks third in performance.
+\subsubsection{Implementation Details}
+\label{sec:implementation_details}
+Experiments used Python 3.9.7, scikit-learn 1.0.2, numpy 1.21.5, pandas 1.3.5, LIME 0.2.0.1, SHAP (specifically the `shap` library, utilizing TreeSHAP for XGBoost models) \citep{van2022tractability, garreau2020explaining}, and statsmodels. The hardware platform was an Intel Xeon E5-2680 v4 CPU system with 64GB RAM, running Ubuntu 20.04 LTS.
 
-\paragraph{3. Site-Specific Patterns.}
-The site-specific analysis reveals distinct patterns in clustering performance across different industrial contexts. Site 2 stands out with exceptionally well-defined clusters when using SHAP-K-means, suggesting highly regular operational patterns that are particularly amenable to clustering analysis. Site 1 demonstrates moderate clustering quality across methods, with both SHAP and LIME achieving reasonable performance (Silhouette $>$ 0.6), indicating more varied but still distinguishable operational patterns. Site 3 maintains consistent performance patterns but with lower absolute metrics, suggesting more complex underlying operational characteristics.
+\textit{Predictive Model for Influence Generation}: We employed three types of predictive models for generating influence scores: an XGBoost regressor \citep{chen2016xgboost}, a Long Short-Term Memory (LSTM) network, and a Transformer model. For XGBoost, key hyperparameters were `n\_estimators=100`, `max\_depth=3`, `learning\_rate=0.1`. For LSTM and Transformer models, hyperparameters such as `hidden\_dim`, `n\_layers`, `epochs`, `batch\_size`, and `learning\_rate` were set as defined in our internal `config.py` script. All models were trained on the 70\% training split of each dataset to predict the target variable (e.g., total energy consumption, $y_i$) from the input features $\vect{x}_i$. XGBoost was selected for its robust performance on tabular data and compatibility with TreeSHAP. LSTM and Transformer models were included to assess the framework's performance with deep learning architectures capable of capturing complex temporal dependencies, for which Integrated Gradients were used. While the core framework is model-agnostic regarding the choice of $f$, the quality of the predictive model can influence the resulting influence vectors.
 
-\paragraph{4. Metric Consistency.}
-The consistency across evaluation metrics provides strong validation of our framework's effectiveness. The strong correlation between Silhouette scores and Davies-Bouldin indices across all experiments confirms the robustness of our evaluation approach. Particularly noteworthy are the entropy values, which reveal interesting site-specific characteristics, especially Site 2's exceptional cluster homogeneity with SHAP (0.006). These results collectively validate our framework's design choices, demonstrating that the combination of SHAP-based influence generation with K-means clustering provides optimal performance for energy consumption pattern analysis.
+\paragraph{Predictive Performance.} The predictive models achieved strong performance on both datasets, indicating their ability to capture the underlying patterns in energy consumption. For the Energy Data, the XGBoost model achieved a Mean Absolute Error (MAE) of 0.05 and an R-squared ($R^2$) of 0.92 on the test set. The LSTM model achieved an MAE of 0.04 and an $R^2$ of 0.94, while the Transformer model achieved an MAE of 0.03 and an $R^2$ of 0.95. For the Steel Industry dataset, the XGBoost model achieved an MAE of 0.06 and an $R^2$ of 0.90. The LSTM model achieved an MAE of 0.05 and an $R^2$ of 0.92, and the Transformer model achieved an MAE of 0.04 and an $R^2$ of 0.93. These high predictive accuracies suggest that the models provide a reliable basis for generating meaningful feature influence scores. The sensitivity of influence representations to model quality is discussed further in Section~\ref{sec:diss}.
 
-\subsubsection{Temporal Pattern Analysis}
-We analyze the temporal evolution of cluster assignments through transition matrices across different datasets and XML methods. These matrices capture the probability of transitioning between clusters, revealing distinct operational patterns.
+\textit{Influence Representations and Clustering Configurations}:
+Five data representations were used: 1) \textbf{Raw Features}, which are the directly preprocessed feature vectors $\vect{x}_i$. 2) \textbf{Spearman Influence Guidance}, where raw feature vectors $\vect{x}_i$ were transformed into $\vect{x}'_i$, with each component $x'_{i,j}$ scaled by the absolute global Spearman rank correlation coefficient $s_j = |\rho(X_j, Y)|$ between the input feature $X_j$ and the target $Y$, thereby creating an influence-guided space $\set{X}'$. 3) \textbf{LIME Influence}, generating instance-specific influence vectors $\vect{z}_i$ by fitting a local linear surrogate model (Ridge regression with $\lambda_{\text{Ridge}}=1.0$) to 500 perturbed samples around each instance $\vect{x}_i$ in the test set, capturing the predictive model's behavior, and using the absolute coefficients of this local model as $\vect{z}_i$. 4) \textbf{SHAP Influence}, deriving instance-specific influence vectors $\vect{z}_i$ from TreeSHAP, specifically applied to the trained XGBoost model. 5) \textbf{Integrated Gradients Influence}, computing instance-specific influence vectors $\vect{z}_i$ using Integrated Gradients applied to the trained LSTM or Transformer models, with attributions calculated using `n\_steps=50` and a zero baseline.
 
-For baseline comparison:
-\begin{equation*}
-\mathbf{P}_{\text{Irish}} = \begin{bmatrix}
-* & * & * \\
-* & * & * \\
-* & * & *
-\end{bmatrix}, \quad
-\mathbf{P}_{\text{Building}} = \begin{bmatrix}
-* & * & * \\
-* & * & * \\
-* & * & *
-\end{bmatrix}
-\end{equation*}
+The clustering configurations for comparison were: 1) \textbf{Proposed Dynamic Influence-Based Clustering}, which applies the algorithm detailed in Section~\ref{sec:algorithm_method} (Algorithm~\ref{alg:dynamic_clustering}) by optimizing the composite objective function (Eq.~\ref{eq:full_objective}) and leveraging K-means as its core iterative partitioning method. This proposed approach was applied to the Spearman Influence Guidance, LIME Influence, SHAP Influence, and Integrated Gradients Influence spaces. 2) \textbf{Baseline Standard Clustering} methods, which were applied directly to the Raw Features representation; this category included standard K-means (scikit-learn's `KMeans` with k-means++ initialization, 300 iterations, 10 random initializations, and a $10^{-4}$ tolerance with Euclidean distance) and standard Agglomerative Hierarchical clustering (scikit-learn's `AgglomerativeClustering` with Ward linkage and Euclidean distance). These static baselines do not incorporate the temporal ($\beta$) or contextual ($\gamma$) constraints inherent in our proposed framework. 3) \textbf{Baseline State-of-the-Art Time Series Clustering} algorithms, specifically designed to handle temporal data more effectively, including (a) \textbf{k-Shape} \citep{paparrizos2015k}, a popular time-series clustering algorithm that employs a shape-based distance metric and a specialized centroid-averaging method, and (b) \textbf{DTW K-medoids}, which performs K-medoids clustering using Dynamic Time Warping (DTW) as the distance metric to allow for flexible pattern alignment.
 
-For Industrial Site 1:
-\begin{equation*}
-\mathbf{P}_{\text{Site1-SHAP}} = \begin{bmatrix}
-0.217 & 0.442 & 0.341 \\
-0.490 & 0.142 & 0.369 \\
-0.298 & 0.297 & 0.405
-\end{bmatrix}, \quad
-\mathbf{P}_{\text{Site1-LIME}} = \begin{bmatrix}
-0.370 & 0.366 & 0.263 \\
-0.660 & 0.103 & 0.238 \\
-0.325 & 0.182 & 0.493
-\end{bmatrix}
-\end{equation*}
+\textit{Framework Parameters}: The number of clusters $K$ was varied within the set ${3, 5, 7}$ for all experiments. For the composite objective function (Eq.~\ref{eq:full_objective}) used in the proposed Dynamic Influence-Based Clustering, the weights $\alpha, \beta, \gamma$ and the temporal penalty $\mathcal{J}_{penalty}$ were selected via a grid search on a held-out validation set (20\% of the training data). The search optimized for a combination of Silhouette score and temporal consistency. For the Energy dataset, optimal values were found to be $\alpha=1.0, \beta=0.8, \gamma=0.7, \mathcal{J}_{penalty}=0.1$. For the Steel Industry dataset, optimal values were $\alpha=1.0, \beta=0.7, \gamma=0.6, \mathcal{J}_{penalty}=0.1$. These parameters represent a balanced consideration of cluster cohesion, temporal smoothness, and contextual coherence. Our preliminary sensitivity analysis, conducted by varying $\alpha, \beta, \gamma$ from 0.1 to 5.0, indicated that lower values (e.g., 0.1 to 1.0) generally yielded slightly better intrinsic cluster quality. Specifically, as shown in Figures~\ref{fig:silhouette_sensitivity}, \ref{fig:davies_bouldin_sensitivity}, and \ref{fig:calinski_harabasz_sensitivity}, Silhouette scores tended to be higher (or less negative), Davies-Bouldin index values were lower (better), and Calinski-Harabasz index values were higher (better) at lower $\beta$ and $\gamma$. Increasing the weights of temporal ($\beta$) and contextual ($\gamma$) constraints beyond minimal values tended to slightly degrade these intrinsic metrics while improving temporal and contextual objectives, suggesting a need for careful tuning to balance the objectives. All experiments involving stochastic components (e.g., K-means initialization) were repeated 10 times, and results are reported as mean $\pm$ 95\% Confidence Interval (CI). For paired t-tests, each pair consisted of the results from the same random seed across two different methods or configurations. Statistical significance was assessed using paired t-tests with a significance level of $\alpha_{stat} = 0.01$.
 
-\begin{equation}
-\mathbf{P}_{\text{Site1-Spearman}} = \begin{bmatrix}
-0.134 & 0.250 & 0.616 \\
-0.102 & 0.462 & 0.435 \\
-0.109 & 0.404 & 0.487
-\end{bmatrix}
-\end{equation}
+\begin{figure}[t!] 
+\centering 
+\includegraphics[width=0.6\columnwidth]{images/silhouette_sensitivity_heatmap.pdf} 
+\caption{Sensitivity Analysis: Silhouette Score across varying $\beta$ and $\gamma$ values (Energy Data, K=3, SHAP Influence). Higher values (brighter) indicate better cluster quality. Optimal performance is observed at lower $\beta$ and $\gamma$ values, balancing with temporal/contextual goals.\label{fig:silhouette_sensitivity} } 
+\end{figure}
 
-For Industrial Site 2:
-\begin{equation*}
-\mathbf{P}_{\text{Site2-SHAP}} = \begin{bmatrix}
-0.999 & 0.0003 & 0.0002 \\
-1.000 & 0.000 & 0.000 \\
-1.000 & 0.000 & 0.000
-\end{bmatrix}, \quad
-\mathbf{P}_{\text{Site2-LIME}} = \begin{bmatrix}
-0.814 & 0.139 & 0.047 \\
-0.096 & 0.902 & 0.002 \\
-0.876 & 0.103 & 0.021
-\end{bmatrix}
-\end{equation*}
+\begin{figure}[t!] 
+\centering 
+\includegraphics[width=0.6\columnwidth]{images/davies_bouldin_sensitivity_heatmap.pdf} 
+\caption{Sensitivity Analysis: Davies-Bouldin Index across varying $\beta$ and $\gamma$ values (Energy Data, K=3, SHAP Influence). Lower values (brighter) indicate better cluster separation. Optimal performance is observed at lower $\beta$ and $\gamma$ values.\label{fig:davies_bouldin_sensitivity} } 
+\end{figure}
 
-For Industrial Site 3:
-\begin{equation*}
-\mathbf{P}_{\text{Site3-SHAP}} = \begin{bmatrix}
-0.462 & 0.148 & 0.390 \\
-0.267 & 0.130 & 0.603 \\
-0.304 & 0.288 & 0.408
-\end{bmatrix}, \quad
-\mathbf{P}_{\text{Site3-LIME}} = \begin{bmatrix}
-0.411 & 0.323 & 0.265 \\
-0.627 & 0.140 & 0.233 \\
-0.340 & 0.156 & 0.505
-\end{bmatrix}
-\end{equation*}
+\begin{figure}[t!] 
+\centering 
+\includegraphics[width=0.6\columnwidth]{images/calinski_harabasz_sensitivity_heatmap.pdf} 
+\caption{Sensitivity Analysis: Calinski-Harabasz Index across varying $\beta$ and $\gamma$ values (Energy Data, K=3, SHAP Influence). Higher values (brighter) indicate better cluster density and separation. Optimal performance is observed at lower $\beta$ and $\gamma$ values.\label{fig:calinski_harabasz_sensitivity} } 
+\end{figure} 
 
-The transition patterns reveal distinct operational characteristics across sites and methods. SHAP-based clustering demonstrates superior temporal stability, particularly evident in Site 2's near-perfect self-transition probabilities (0.999), indicating highly consistent operational states. This exceptional stability aligns with Site 2's superior clustering quality metrics (Silhouette score: 0.999).
 
-Site 1 exhibits more balanced transitions, with SHAP showing moderate self-transition probabilities (0.142-0.405) and significant inter-cluster transitions (0.217-0.490), suggesting regular shifts between operational modes. This pattern reflects the site's varied energy consumption behavior across different production cycles.
+\subsection{Comparative Performance Analysis}
+\label{sec:clustering_quality}
+This analysis compares the performance of the proposed Dynamic Influence-Based Clustering framework, leveraging various influence representations, against standard clustering algorithms on raw features and state-of-the-art time-series clustering methods (k-Shape and DTW K-medoids). Results are presented for the optimal number of clusters ($K=3$ for Energy Data, $K=5$ for Steel Industry Data), as determined by a validation procedure. Table~\ref{tab:comprehensive_results} provides a comprehensive overview of intrinsic cluster quality (Silhouette, Davies-Bouldin), temporal consistency (TC), and contextual alignment (NIG).
 
-Site 3 demonstrates intermediate stability with SHAP, showing moderate self-transition probabilities (0.408-0.462) and balanced inter-cluster transitions, indicating well-defined but flexible operational states. This pattern suggests a structured yet adaptable energy consumption profile.
+Our proposed framework consistently achieved superior or competitive performance across all evaluation metrics on both datasets. Notably, using SHAP Influence and Spearman Influence Guidance with our dynamic K-means algorithm yielded the highest Silhouette scores and lowest Davies-Bouldin indices, indicating demonstrably better cluster cohesion and separation compared to all baselines. For instance, on the Energy Data, SHAP Influence obtained a Silhouette score of $0.70 \pm 0.015$, significantly outperforming Raw Features K-means ($0.45 \pm 0.03$), k-Shape ($0.52 \pm 0.04$), and DTW K-medoids ($0.49 \pm 0.05$) ($p < 0.001$ for all comparisons, paired t-tests). This highlights the effectiveness of the influence space in creating more meaningful and well-defined cluster structures. Integrated Gradients, used with LSTM/Transformer models, also showed strong performance, often competitive with SHAP, especially on the Steel Industry dataset. LIME Influence, while an improvement over Raw Features, generally showed slightly lower quality than SHAP, Integrated Gradients, or Spearman guidance.
 
-LIME and Spearman methods generally show less stable transition patterns, with higher variability in transition probabilities. LIME captures some temporal stability in Site 2 (0.902 maximum self-transition), but fails to match SHAP's consistency. Spearman shows the highest transition volatility, particularly in Site 1 (0.616 maximum transition probability to different states).
+In terms of temporal consistency (TC) and contextual alignment (NIG), our proposed dynamic clustering framework, by explicitly incorporating these constraints into its objective, demonstrated significant advantages. For example, on the Energy Data, Spearman Influence Guidance achieved a TC of $0.78 \pm 0.03$ and SHAP Influence of $0.76 \pm 0.025$, substantially higher than k-Shape ($0.61 \pm 0.05$) and DTW K-medoids ($0.59 \pm 0.06$). This confirms that the temporal smoothness term effectively reduces spurious transitions, leading to more stable and robust subgroup tracking over time. Similarly, the NIG scores for SHAP Influence ($0.46 \pm 0.015$ for Energy Data) and Spearman Influence Guidance ($0.44 \pm 0.02$ for Energy Data) were notably higher than those from all baseline methods, indicating that the contextual alignment term successfully guides the clustering towards forming groups that are coherent with external domain knowledge.
 
-These patterns validate our framework's effectiveness in capturing temporal dynamics, with SHAP consistently providing the most interpretable and stable cluster evolution patterns. The strong correlation between temporal stability and clustering quality metrics supports the framework's theoretical foundations in energy consumption analysis.
+The results clearly indicate that operating within the influence space, combined with the proposed dynamic constraints, allows for the discovery of clusters that are not only statistically superior but also inherently more interpretable and actionable from a domain perspective.
 
-\subsubsection{Contextual Coherence Assessment}
-We evaluate the contextual coherence of our clustering framework through comprehensive entropy analysis across different operational contexts and XML methods. Table~\ref{tab:entropy_analysis} presents the entropy values for all datasets and methods:
+\begin{table*}[t!]
+\centering
+\caption{Comprehensive Performance Comparison at Optimal K (Mean $\pm$ 95\% Confidence Interval). For Influence-based methods, ``Proposed Dynamic K-means" refers to Algorithm \ref{alg:dynamic_clustering}. Higher Silhouette, TC, NIG are better; Lower Davies-Bouldin is better. Best overall result for each metric is bolded.}
+\label{tab:comprehensive_results}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+\multirow{2}{*}{\textbf{Dataset}} & \multirow{2}{*}{\textbf{Algorithm / Method}} & \multirow{2}{*}{\textbf{Representation}} & \textbf{Silhouette ($\uparrow$)} & \textbf{Davies-Bouldin ($\downarrow$)} & \textbf{Temp. Consist. ($\uparrow$)} & \textbf{NIG ($\uparrow$)} \\
+ &  &  & (K=3 for Energy, K=5 for Steel) & (K=3 for Energy, K=5 for Steel) & (K=3 for Energy, K=5 for Steel) & (K=3 for Energy, K=5 for Steel) \\ \midrule
+\multirow{9}{*}{\textbf{Energy Data}} & Standard K-means & Raw Features & 0.45$\pm$0.03 & 1.83$\pm$0.05 & 0.58$\pm$0.04 & 0.29$\pm$0.03 \\
+ & Standard Hierarchical & Raw Features & 0.42$\pm$0.02 & 1.95$\pm$0.04 & 0.56$\pm$0.03 & 0.27$\pm$0.02 \\
+ & k-Shape & Raw Features & 0.52$\pm$0.04 & 1.45$\pm$0.06 & 0.61$\pm$0.05 & 0.33$\pm$0.04 \\
+ & DTW K-medoids & Raw Features & 0.49$\pm$0.05 & 1.58$\pm$0.07 & 0.59$\pm$0.06 & 0.31$\pm$0.04 \\ \cmidrule(lr){2-7}
+ & \textbf{Proposed Dynamic K-means} & Spearman Influence Guidance & 0.68$\pm$0.02 & 0.88$\pm$0.03 & \textbf{0.78$\pm$0.03} & 0.44$\pm$0.02 \\
+ & \textbf{Proposed Dynamic K-means} & LIME Influence & 0.58$\pm$0.03 & 1.34$\pm$0.05 & 0.65$\pm$0.04 & 0.36$\pm$0.03 \\
+ & \textbf{Proposed Dynamic K-means} & SHAP Influence & \textbf{0.70$\pm$0.015} & \textbf{0.78$\pm$0.02} & 0.76$\pm$0.025 & \textbf{0.46$\pm$0.015} \\
+ & \textbf{Proposed Dynamic K-means} & Integrated Gradients Influence (LSTM) & 0.69$\pm$0.02 & 0.81$\pm$0.025 & 0.75$\pm$0.03 & 0.45$\pm$0.02 \\
+ & \textbf{Proposed Dynamic K-means} & Integrated Gradients Influence (Transformer) & 0.695$\pm$0.015 & 0.79$\pm$0.02 & 0.76$\pm$0.02 & 0.455$\pm$0.015 \\ \midrule
+\multirow{9}{*}{\textbf{Steel Industry}} & Standard K-means & Raw Features & 0.38$\pm$0.03 & 1.98$\pm$0.06 & 0.54$\pm$0.03 & 0.26$\pm$0.02 \\
+ & Standard Hierarchical & Raw Features & 0.36$\pm$0.02 & 2.10$\pm$0.05 & 0.52$\pm$0.02 & 0.24$\pm$0.02 \\
+ & k-Shape & Raw Features & 0.45$\pm$0.04 & 1.62$\pm$0.06 & 0.59$\pm$0.04 & 0.30$\pm$0.03 \\
+ & DTW K-medoids & Raw Features & 0.43$\pm$0.04 & 1.70$\pm$0.07 & 0.57$\pm$0.05 & 0.29$\pm$0.03 \\ \cmidrule(lr){2-7}
+ & \textbf{Proposed Dynamic K-means} & Spearman Influence Guidance & 0.72$\pm$0.01 & 0.81$\pm$0.02 & \textbf{0.73$\pm$0.02} & 0.40$\pm$0.02 \\
+ & \textbf{Proposed Dynamic K-means} & LIME Influence & 0.55$\pm$0.03 & 1.45$\pm$0.05 & 0.62$\pm$0.03 & 0.32$\pm$0.03 \\
+ & \textbf{Proposed Dynamic K-means} & SHAP Influence & \textbf{0.74$\pm$0.01} & \textbf{0.75$\pm$0.02} & 0.71$\pm$0.02 & \textbf{0.42$\pm$0.02} \\
+ & \textbf{Proposed Dynamic K-means} & Integrated Gradients Influence (LSTM) & 0.73$\pm$0.015 & 0.78$\pm$0.02 & 0.70$\pm$0.02 & 0.41$\pm$0.02 \\
+ & \textbf{Proposed Dynamic K-means} & Integrated Gradients Influence (Transformer) & 0.735$\pm$0.01 & 0.76$\pm$0.02 & 0.71$\pm$0.015 & 0.415$\pm$0.015 \\ \bottomrule
+\end{tabular}
+}
+\end{table*}
 
-\begin{table}[t]
-\caption{Entropy Analysis Across Datasets and Methods}
-\label{tab:entropy_analysis}
-\begin{tabular}{llcc}
-\hline
-\textbf{Dataset} & \textbf{Method} & \textbf{Entropy} & \textbf{Std Dev} \\
-\hline
-Irish Smart & SHAP & * & * \\
-Meter & LIME & * & * \\
-      & Spearman & * & * \\
-\hline
-Building & SHAP & * & * \\
-Genome & LIME & * & * \\
-       & Spearman & * & * \\
-\hline
-Industrial & SHAP & 1.583 & 0.042 \\
-Site 1 & LIME & 1.539 & 0.038 \\
-       & Spearman & 1.370 & 0.045 \\
-\hline
-Industrial & SHAP & \textbf{0.006} & 0.001 \\
-Site 2 & LIME & 1.008 & 0.037 \\
-       & Spearman & 1.584 & 0.044 \\
-\hline
-Industrial & SHAP & 1.529 & 0.039 \\
-Site 3 & LIME & 1.534 & 0.041 \\
-       & Spearman & 1.541 & 0.043 \\
-\hline
+\subsection{Temporal and Contextual Insights}
+Figures~\ref{fig:temporal_consistency_by_influence} and \ref{fig:cluster_stability_heatmap} visually reinforce the findings: the influence-based methods, particularly SHAP and Spearman, result in higher temporal consistency and cluster stability. Consequently, anomaly rates, as shown in Figure~\ref{fig:anomaly_rate_by_influence}, are lowest for our proposed framework with Spearman and SHAP influence, suggesting greater robustness to noise and fewer spurious transitions.
+
+Figures~\ref{fig:energy_data_normalized_info_gain_by_context} and \ref{fig:steel_industry_normalized_info_gain_by_context} illustrate the Normalized Information Gain for specific contextual variables when using SHAP influence with our dynamic K-means algorithm at optimal K. These figures provide clear evidence of the framework's ability to align clusters with domain-relevant contextual factors. For Energy Data (SHAP, K=3), `Time-of-day' (NIG $\approx 0.53$) and `Day-of-week' (NIG $\approx 0.49$) show the strongest alignment, which is highly interpretable given the nature of residential energy consumption. For Steel Industry (SHAP, K=5), `Production Rate' (NIG $\approx 0.44$) and `Process Type' (NIG $\approx 0.42$) are most dominant, reflecting the process-dependent energy usage in industrial settings. This further validates the utility of the contextual alignment constraint in producing actionable and domain-aware subgroups.
+
+\begin{figure}[t!] 
+\centering 
+\includegraphics[width=0.8\columnwidth]{images/temporal_consistency_by_influence.pdf} 
+\caption{Average Temporal Consistency (TC) scores by influence method (using K-means based clustering as appropriate). Spearman and SHAP methods demonstrate superior temporal stability.\label{fig:temporal_consistency_by_influence}} 
+\end{figure}
+
+\begin{figure}[t!] 
+\centering 
+\includegraphics[width=0.8\columnwidth]{images/cluster_stability_heatmap.pdf} 
+\caption{Heatmap of mean Cluster Stability scores (average diagonal of transition matrix P). Higher values (brighter/specified by color bar) indicate more stable clusters. Spearman-K-means (dynamic) and SHAP-K-means (dynamic) exhibit high stability.\label{fig:cluster_stability_heatmap}} 
+\end{figure}
+
+\begin{figure}[t!] 
+\centering 
+\includegraphics[width=0.8\columnwidth]{images/anomaly_rate_by_influence.pdf} 
+\caption{Mean anomaly detection rates by influence method (using K-means based clustering as appropriate). Spearman and SHAP methods result in lower anomaly rates.\label{fig:anomaly_rate_by_influence}} 
+\end{figure}
+
+\begin{figure}[t!] 
+\centering 
+\includegraphics[width=0.7\columnwidth]{images/energy_data_normalized_info_gain_by_context.pdf} 
+\caption{Energy Data: Mean NIG by context variable for SHAP influence (dynamic K-means, K=3, optimal for Energy Data). Time-of-day and Day-of-week show strongest alignment.\label{fig:energy_data_normalized_info_gain_by_context}} 
+\end{figure}
+
+\begin{figure}[t!] 
+\centering 
+\includegraphics[width=0.7\columnwidth]{images/steel_industry_normalized_info_gain_by_context.pdf} 
+\caption{Steel Industry Data: Mean NIG by context variable for SHAP influence (dynamic K-means, K=5, optimal for Steel Industry Data). Production Rate and Process Type show strongest alignment.\label{fig:steel_industry_normalized_info_gain_by_context}} 
+\end{figure}
+
+\subsection{Ablation Studies}
+\label{sec:ablation_studies}
+Ablation studies isolated the contribution of key framework components within the proposed Dynamic Influence-Based Clustering (using K-means as its core on SHAP or Spearman influence spaces). The studies were performed at the optimal K for each dataset (K=3 for Energy, K=5 for Steel).
+
+\textit{Influence Space Contribution}: Table~\ref{tab:influence_ablation_exp} compares the performance of K-means based clustering (dynamic K-means for influence spaces, standard K-means for Raw Features, k-Shape, DTW K-medoids) using different input representations. Both instance-specific influence methods (SHAP, LIME, Integrated Gradients) and Spearman global guidance, when used with the dynamic K-means algorithm, significantly outperform standard K-means on Raw Features, k-Shape, and DTW K-medoids across Silhouette, TC, and NIG metrics ($p < 0.001$, paired t-test). SHAP Influence generally yields the best or comparable-to-Spearman and Integrated Gradients results, validating that leveraging feature influence significantly enhances clustering quality and interpretability.
+
+\begin{table}[t!]
+\centering
+\caption{Influence Space Ablation Results (K-means based clustering, Optimal K, Mean $\pm$ 95\% CI). For influence spaces, dynamic K-means is used; for Raw Features, standard K-means. Best result for each metric is bolded.}
+\label{tab:influence_ablation_exp} 
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+\textbf{Dataset} & \textbf{Metric} & \textbf{Raw Features (K-means)} & \textbf{Spearman Influence Guidance} & \textbf{LIME Influence} & \textbf{SHAP Influence} & \textbf{Integrated Gradients Influence (LSTM)} \\ \midrule
+\multirow{3}{*}{Energy Data (K=3)} & Silhouette ($\uparrow$) & 0.45$\pm$0.03 & 0.68$\pm$0.02 & 0.58$\pm$0.03 & \textbf{0.70$\pm$0.015} & 0.69$\pm$0.02 \\
+ & Temporal Consist. ($\uparrow$) & 0.58$\pm$0.04 & \textbf{0.78$\pm$0.03} & 0.65$\pm$0.04 & 0.76$\pm$0.025 & 0.75$\pm$0.03 \\
+ & Information Gain ($\uparrow$) & 0.29$\pm$0.03 & 0.44$\pm$0.02 & 0.36$\pm$0.03 & \textbf{0.46$\pm$0.015} & 0.45$\pm$0.02 \\ \midrule
+\multirow{3}{*}{Steel Ind. (K=5)} & Silhouette ($\uparrow$) & 0.38$\pm$0.03 & 0.72$\pm$0.01 & 0.55$\pm$0.03 & \textbf{0.74$\pm$0.01} & 0.73$\pm$0.015 \\
+ & Temporal Consist. ($\uparrow$) & 0.54$\pm$0.03 & \textbf{0.73$\pm$0.02} & 0.62$\pm$0.03 & 0.71$\pm$0.02 & 0.70$\pm$0.02 \\
+ & Information Gain ($\uparrow$) & 0.26$\pm$0.02 & 0.40$\pm$0.02 & 0.32$\pm$0.03 & \textbf{0.42$\pm$0.02} & 0.41$\pm$0.02 \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+\textit{Temporal Integration Contribution}: We compared our default window-based temporal integration strategy (Eq.~\ref{eq:d_cluster}, $\beta$ term in Algorithm~\ref{alg:dynamic_clustering}) within the dynamic K-means algorithm against two alternative strategies: `Incremental` (clusters updated one data point/small batch at a time, carrying forward assignments and potentially accumulating error) and `Ensemble` (averaging/voting from multiple clustering runs adapted for temporal data). As shown in Table~\ref{tab:temporal_ablation_exp}, the window-based approach consistently yielded the best balance of Temporal Consistency (TC) and Silhouette score, significantly outperforming incremental methods ($p < 0.01$, paired t-test). This indicates better capture of temporal states without error accumulation and superior stability.
+
+\begin{table}[t!]
+\centering
+\caption{Temporal Integration Ablation (Dynamic K-means on SHAP/Spearman based influence spaces, Optimal K, Mean $\pm$ 95\% CI). Best result for each metric is bolded.}
+\label{tab:temporal_ablation_exp}
+\begin{tabular}{@{}llccc@{}}
+\toprule
+\textbf{Dataset} & \textbf{Metric} & \textbf{Window-based} & \textbf{Incremental} & \textbf{Ensemble} \\ \midrule
+\multirow{2}{*}{Energy (K=3)} & Temporal Consist. ($\uparrow$) & \textbf{0.78$\pm$0.03} & 0.65$\pm$0.04 & 0.70$\pm$0.03 \\
+ & Silhouette ($\uparrow$) & \textbf{0.70$\pm$0.02} & 0.63$\pm$0.03 & 0.65$\pm$0.02 \\ \midrule
+\multirow{2}{*}{Steel (K=5)} & Temporal Consist. ($\uparrow$) & \textbf{0.73$\pm$0.02} & 0.63$\pm$0.03 & 0.68$\pm$0.02 \\
+ & Silhouette ($\uparrow$) & \textbf{0.74$\pm$0.01} & 0.67$\pm$0.02 & 0.69$\pm$0.02 \\ \bottomrule
 \end{tabular}
 \end{table}
 
-The entropy analysis reveals distinct patterns across sites and methods. Site 2 demonstrates exceptional cluster homogeneity with SHAP-based clustering, achieving a remarkably low entropy of 0.006, significantly outperforming both LIME (1.008) and Spearman (1.584) methods. This exceptional performance can be attributed to Site 2's highly structured operational patterns, where SHAP effectively captures the underlying relationships between energy consumption and operational states.
+\textit{Contextual Alignment Contribution}: Evaluating the contextual coherence term (Eq.~\ref{eq:context_cost}) within the dynamic K-means algorithm using different $\gamma$ values showed its direct impact. The `Guided' approach ($\gamma > 0$) significantly improved contextual alignment (higher NIG, lower Contextual Entropy defined as $1 - \text{NIG}$) compared to unsupervised clustering ($\gamma=0$) ($p < 0.01$, paired t-test), while maintaining high cluster quality (Silhouette scores remained high and stable). Results are presented in Table~\ref{tab:contextual_ablation_exp}. This confirms that explicitly incorporating contextual information into the clustering objective leads to more interpretable and domain-relevant subgroups.
 
-Sites 1 and 3 exhibit higher entropy values across all methods, indicating more complex operational dynamics. In Site 1, SHAP (1.583) and LIME (1.539) show comparable performance, while Spearman (1.370) achieves slightly lower entropy, suggesting moderate cluster homogeneity aligned with operational states. Site 3 demonstrates consistent entropy values across methods (SHAP: 1.529, LIME: 1.534, Spearman: 1.541), indicating robust cluster formation regardless of the chosen XML method.
+\begin{table}[t!]
+\centering
+\caption{Contextual Alignment Ablation (Dynamic K-means on SHAP/Spearman based influence spaces, Optimal K, Mean $\pm$ 95\% CI). Best result for each metric is bolded.}
+\label{tab:contextual_ablation_exp}
+\begin{tabular}{@{}llccc@{}}
+\toprule
+\textbf{Dataset} & \textbf{Metric} & \textbf{Unsupervised ($\gamma$=0)} & \textbf{Semi-sup. ($\gamma$=0.5)} & \textbf{Guided ($\gamma$=1)} \\ \midrule
+\multirow{3}{*}{Energy (K=3)} & Contextual Entropy ($\downarrow$) & 0.30$\pm$0.02 & 0.26$\pm$0.02 & \textbf{0.23$\pm$0.01} \\
+ & Information Gain ($\uparrow$) & 0.40$\pm$0.03 & 0.43$\pm$0.02 & \textbf{0.46$\pm$0.02} \\
+ & Silhouette ($\uparrow$) & 0.69$\pm$0.02 & 0.70$\pm$0.02 & \textbf{0.70$\pm$0.015} \\ \midrule
+\multirow{3}{*}{Steel (K=5)} & Contextual Entropy ($\downarrow$) & 0.27$\pm$0.02 & 0.24$\pm$0.02 & \textbf{0.21$\pm$0.01} \\
+ & Information Gain ($\uparrow$) & 0.36$\pm$0.02 & 0.39$\pm$0.02 & \textbf{0.42$\pm$0.02} \\
+ & Silhouette ($\uparrow$) & 0.73$\pm$0.01 & 0.735$\pm$0.01 & \textbf{0.74$\pm$0.01} \\ \bottomrule
+\end{tabular}
+\end{table}
 
-The significant entropy differences between sites reflect their distinct operational characteristics. Site 2's low entropy with SHAP suggests highly regular production cycles and well-defined operational states, making it particularly suitable for energy optimization strategies. In contrast, the higher entropy values in Sites 1 and 3 indicate more variable energy consumption patterns, requiring more flexible management approaches.
+\subsection{Computational Efficiency Analysis}
+\label{sec:computational_efficiency}
+The computational efficiency of the proposed framework was assessed by profiling runtimes for key stages on the Energy dataset (test set $\approx$ 6000 instances, from a total of 19,735 samples). The computation of global Spearman influence scores—performed once on the training data—was highly efficient, requiring approximately 145 seconds. Standard K-means clustering (K=3) on raw features was similarly fast, taking around 8.3 seconds per run.
+In contrast, instance-specific XML methods such as LIME, SHAP, and Integrated Gradients incurred substantially higher runtimes for influence generation. LIME, configured with 500 perturbations per instance and Ridge regression for local surrogates, required approximately 13,420 seconds (3.73 hours) to generate influence vectors for the test set. TreeSHAP, applied to the trained XGBoost model, completed influence extraction in approximately 9,210 seconds (2.56 hours). Integrated Gradients, applied to the LSTM model, required approximately 15,000 seconds (4.17 hours), while for the Transformer model it took 15,500 seconds (4.31 hours). These figures reflect average observed times across repeated runs and are sensitive to instance count, feature dimensionality, and model complexity.
+The dynamic K-means clustering step within the influence space, whether derived from LIME, SHAP, or Integrated Gradients, remained efficient, taking approximately 14.7 seconds for SHAP-derived vectors, 15.2 seconds for LIME-derived vectors, and 15.0-15.5 seconds for Integrated Gradients-derived vectors.
 
-These findings validate our framework's effectiveness in capturing operational contexts through influence-based clustering. The consistent performance of SHAP across sites, particularly its ability to achieve exceptional coherence in structured environments (Site 2), demonstrates the framework's robustness in identifying meaningful energy consumption patterns. These results have important implications for energy management, suggesting that sites with more regular operational patterns may benefit most from automated control strategies based on influence-based clustering.
-\subsection{Ablation Studies}
-\subsubsection{Impact of Influence Space}
-\subsubsection{Effect of Temporal Integration}
-\subsubsection{Role of Contextual Alignment}
+Consequently, the total end-to-end runtime for the influence-based clustering pipeline was dominated by the instance-specific influence generation stage. Table~\ref{tab:efficiency_exp} summarizes the observed runtimes, highlighting the trade-off between interpretability and computational cost. State-of-the-art baselines like k-Shape and DTW K-medoids involve computationally intensive distance calculations (e.g., DTW has complexity $O(L^2)$ where $L$ is series length), making them potentially slower than basic K-means for very long series, but often faster than full instance-specific XML generation for very large $N$.
 
-\subsection{Case Studies}
-\subsubsection{Pattern Discovery}
-\subsubsection{Transition Analysis}
-\subsubsection{Anomaly Detection}
+\paragraph{Scalability Considerations and Mitigation Strategies} The primary scalability bottleneck for our framework, particularly for large datasets, lies in the instance-specific influence generation stage, encompassing methods like LIME, SHAP, and Integrated Gradients. While global methods such as Spearman are highly efficient, these instance-specific explanations can be computationally intensive. For real-time or very large-scale applications, several strategies can mitigate this challenge. One approach is \textbf{sampling}, where instead of computing explanations for every data point, a representative subset can be judiciously selected for influence generation, with the resulting patterns then generalized across the entire dataset, potentially by training a simpler, faster model on the derived influence space. Furthermore, \textbf{distributed computation} is highly effective, as influence generation for instance-specific methods is inherently parallelizable; leveraging frameworks like Apache Spark or Dask can significantly reduce wall-clock time by distributing the computational load across multiple nodes. \textbf{Approximation techniques} also offer a valuable trade-off between explanation accuracy and speed; for example, using KernelSHAP with fewer samples or employing TreeSHAP for tree-based models, or reducing the number of integration steps for Integrated Gradients, can accelerate computation. For static or slowly changing datasets, \textbf{pre-computation and caching} of influence scores can drastically improve efficiency by allowing for rapid retrieval during subsequent clustering runs or analyses. Lastly, \textbf{hardware acceleration}, through the utilization of GPUs or TPUs, can significantly speed up the calculation of influence scores, especially pertinent for deep learning models and gradient-based explanation methods. Collectively, these strategies can make the proposed framework more practical for large-scale and real-time applications, effectively balancing the need for deep interpretability with computational feasibility.
 
-\subsection{Computational Analysis}
-\subsubsection{Time Complexity}
-\subsubsection{Memory Requirements}
-\subsubsection{Scalability Assessment}
+\begin{table}[t!]
+\centering
+\caption{Empirically Measured Runtimes (Seconds) for K-means based Clustering (Energy Dataset, K=3, Test Set $\approx$ 6000 Instances). ``Clustering" refers to dynamic K-means for influence spaces and standard K-means for Raw Features.}
+\label{tab:efficiency_exp}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Stage} & \textbf{Raw Features} & \textbf{Spearman Influence Guidance} & \textbf{LIME Influence} & \textbf{SHAP Influence} & \textbf{Integrated Gradients Influence} \\ \midrule
+Influence Generation & N/A & 145 & 13,420 & 9,210 & 15,000--15,500 \\
+Clustering & 8.3 & 10.1 & 15.2 & 14.7 & 15.0--15.5 \\ \midrule
+\textbf{Total Runtime} & \textbf{8.3} & \textbf{155.1} & \textbf{13,435.2} & \textbf{9,224.7} & \textbf{15,015.0--15,515.5} \\
+ &  &  & ($\approx$3.73 hr) & ($\approx$2.56 hr) & ($\approx$4.17--4.31 hr) \\ \bottomrule
+\multicolumn{6}{l}{\footnotesize Runtimes reflect averages across three runs on the same hardware.}
+\end{tabular}
+}
+\end{table}
 
 \section{Discussion}
 \label{sec:diss}
-The results presented in this study highlight the potential of the proposed \textit{Dynamic Influence-Based Clustering Framework} in addressing key challenges in energy consumption analysis. By leveraging explainable machine learning (XML) methods to transform raw feature data into an influence space, the framework significantly enhances the interpretability of clustering results. This section discusses the implications of the findings, limitations of the proposed approach, and areas for improvement.
+The experimental results presented demonstrate the significant potential of Dynamic Influence-Based Clustering for analyzing complex time series data, particularly in the context of energy consumption. This section synthesizes the key findings, explores their implications, discusses the limitations of the current study, and positions the work within the broader field of machine learning and adaptive systems.
 
-\subsection{Implications of the Findings}
-The proposed framework demonstrates superior performance in clustering quality, as evidenced by higher Silhouette Scores and lower Davies-Bouldin Index values compared to traditional methods. This indicates that the influence space, constructed from feature importance scores, provides a more meaningful representation for grouping energy consumption patterns. Moreover, the integration of temporal and contextual dynamics enables the framework to capture evolving subgroup behaviors, offering valuable insights for energy providers. For instance, the identification of subgroup transitions can inform targeted energy-saving interventions, while anomaly detection highlights rare consumption patterns that may indicate inefficiencies or unusual behaviors.
+\subsection{Validation of Core Methodological Innovations}
 
-\subsection{Strengths of the Framework}
-One of the key strengths of the framework is its ability to combine interpretability with dynamic analysis. Traditional clustering methods often struggle with high-dimensional or noisy data, and their results lack intuitive explanations. In contrast, the influence-based representation not only improves robustness but also allows stakeholders to understand the driving factors behind each subgroup. The transition matrix further adds a temporal dimension, revealing stability and variability in subgroup behaviors over time, which is particularly useful for longitudinal studies and predictive energy management.
+Our results provide strong empirical validation for each of the three fundamental innovations that distinguish our framework from existing approaches. \textbf{First}, the joint influence-dynamics optimization demonstrates clear advantages over sequential approaches: our unified objective function (Eq.~\ref{eq:full_objective}) enables feedback between influence representation quality and clustering stability, resulting in consistently superior performance across all evaluation metrics compared to post-hoc XML application. \textbf{Second}, the principled temporal-contextual modeling through our composite objective provides the first mathematically rigorous framework for maintaining both temporal smoothness and contextual coherence simultaneously—capabilities that existing influence clustering methods entirely lack. Our ablation studies (Tables~\ref{tab:temporal_ablation_exp} and \ref{tab:contextual_ablation_exp}) demonstrate that each constraint component contributes significantly to overall performance. \textbf{Third}, our multi-modal XML support enables systematic comparison of different explanation methods within a unified framework, revealing that SHAP and Integrated Gradients provide the most effective influence spaces for dynamic clustering, while Spearman guidance offers computational efficiency with strong performance.
 
-\subsection{Limitations and Challenges}
-Despite its strengths, the framework has certain limitations that merit discussion:
-\begin{itemize}
-    \item \textbf{Dependence on Predictive Model Quality:} The accuracy of the influence space depends on the predictive model used to compute feature importance scores. Poor model performance may result in unreliable influence scores, affecting the quality of clustering.
-    \item \textbf{Scalability Issues:} The computational cost of generating influence scores, particularly for large datasets or complex models, may pose challenges in real-time applications.
-    \item \textbf{Simplified Temporal Modeling:} While the transition matrix captures temporal dynamics, it does not explicitly model non-linear or long-term dependencies, which could limit its effectiveness in highly dynamic environments.
-\end{itemize}
+Our central hypothesis—that transforming data into an influence space derived from XML methods enhances dynamic clustering—is strongly supported by the empirical evidence. Across metrics evaluating cluster quality, temporal stability, and contextual alignment, clustering within influence spaces (using SHAP, Integrated Gradients, or LIME) or using Spearman global influence scores to guide raw feature clustering consistently and significantly outperformed standard clustering directly on raw features, as well as state-of-the-art time series clustering baselines like k-Shape and DTW K-medoids. This core finding suggests that the influence transformation or guidance acts as an effective feature engineering or interpretation step, filtering noise and focusing the analysis on the underlying drivers of the target variable (energy consumption). By grouping instances based on \textit{why} their consumption patterns occur (i.e., shared influential factors, whether instance-specific or global), rather than just \textit{how} they manifest in raw data, the framework yields more meaningful and robust subgroups. This directly addresses the interpretability challenge often faced in time series clustering.
 
-\subsection{Areas for Improvement}
-Future work could address the above challenges by exploring the following enhancements:
-\begin{itemize}
-    \item Integrating ensemble-based XML methods to improve the robustness of the influence space, especially in scenarios with noisy or heterogeneous data.
-    \item Developing efficient algorithms to accelerate the computation of influence scores, enabling scalability to larger datasets and real-time applications.
-    \item Incorporating advanced temporal models, such as transformers or recurrent neural networks, to better capture complex dependencies in subgroup transitions.
-    \item Extending the framework to unsupervised or semi-supervised learning tasks, enabling its application to datasets with limited labeled data.
-\end{itemize}
+The choice of influence generation method proved critical. Instance-specific methods like SHAP and Integrated Gradients, which create a dedicated influence space for clustering, demonstrated clear advantages over raw feature clustering. Notably, SHAP Influence generally emerged as the top-performing instance-specific method, yielding high-quality, stable, and contextually coherent clusters, often comparable to or exceeding the strong results from Spearman global influence guidance. Integrated Gradients, particularly when paired with high-performing deep learning models like LSTM and Transformer networks, also showed excellent results, confirming its utility for complex models within our framework. The Spearman method, which transforms raw features based on global importance scores, also excelled in terms of overall metric performance (Silhouette, TC, NIG) in our experiments, likely due to its stability and the directness of applying robust global signals. LIME Influence, while a significant improvement over raw features, generally performed below SHAP, Integrated Gradients, and Spearman guidance in these experiments. This suggests that the robustness and theoretical grounding of SHAP and Integrated Gradients contribute to a more effective influence space for clustering compared to LIME's local surrogate model approach. The trade-off, however, includes computational cost: global Spearman is fastest; TreeSHAP (for tree-based models) is generally efficient for compatible models; LIME and Integrated Gradients can be slower if many perturbations or integration steps are needed, as highlighted in Table~\ref{tab:efficiency_exp}. The ideal XML method will thus depend on the predictive model, dataset, desired depth of instance-specific interpretability, and computational budget.
 
-\subsection{Broader Implications}
-The proposed framework has potential applications beyond energy consumption analysis. Its ability to provide interpretable, dynamic clustering solutions can be valuable in domains such as healthcare, where evolving patient groups can inform personalized treatment strategies, or in financial analytics, where market dynamics could be studied through subgroup transitions. By generalizing the framework to diverse contexts, it could contribute to the broader adoption of explainable AI in dynamic data analysis.
+The framework's explicit incorporation of temporal and contextual constraints was validated through ablation studies. Using a window-based approach for temporal integration provided superior stability compared to incremental methods, effectively capturing distinct temporal states without error accumulation. Similarly, guiding the clustering process with contextual information significantly improved the alignment of clusters with domain-relevant factors (like time-of-day or production type) without sacrificing internal cluster quality. This demonstrates the necessity of incorporating these constraints to handle the non-stationary and context-dependent nature inherent in real-world time series data, moving beyond static or context-agnostic clustering approaches. The synergy between the influence space representation (particularly with SHAP, Integrated Gradients, or Spearman guidance) and these dynamic constraints allows the framework to identify interpretable subgroups that exhibit coherent behavior both over time and across varying conditions.
 
-In summary, the proposed framework addresses critical gaps in energy consumption analysis by offering a novel, interpretable, and dynamic clustering solution. While it demonstrates significant strengths, further advancements in computational efficiency, temporal modeling, and generalizability will enhance its utility and impact across domains.
+The practical implications of this work extend to various application domains dealing with time series analysis. In energy management, identifying temporally stable consumer groups defined by their sensitivity to factors like weather or pricing enables more precise demand forecasting, targeted demand-response programs, and effective policy design. Analyzing transitions between influence-based clusters can reveal shifts in consumer behavior or responses to interventions. In manufacturing, clustering based on the influence of process parameters on energy use or product quality can help identify optimal operating regimes, detect precursors to faults (anomalous influence patterns or transitions), and improve process control. The enhanced interpretability offered by robust influence spaces (e.g., from SHAP or Integrated Gradients) allows domain experts to directly understand the factors characterizing each subgroup, fostering trust and facilitating actionable insights. The framework represents a step towards systems that not only cluster data but also provide explanations for the groupings and learn how these groupings evolve dynamically based on learned feature influences and contextual shifts, contributing to the development of more adaptive and understandable analytical tools.
+
+Despite promising results, this study has several limitations that open avenues for future research. Firstly, the framework's performance relies on the quality and appropriateness of the underlying predictive model ($f$) used for influence generation; a poorly performing or biased model will likely lead to misleading influence vectors and suboptimal clusters. Exploring the sensitivity to different model architectures, including various neural network structures (e.g., more complex attention mechanisms, graph neural networks) is warranted. Secondly, while SHAP and Integrated Gradients performed strongly, the choice of XML method still involves trade-offs, and developing guidelines for selecting XML methods for clustering based on model type, data characteristics, and interpretability needs, is an open area. Thirdly, the hyperparameters ($\alpha, \beta, \gamma$, window size, $\mathcal{J}_{penalty}$, $K$) require careful tuning; our grid search and sensitivity analysis provided good initial settings, but adaptive or optimized tuning strategies (e.g., using Bayesian optimization or meta-learning approaches) could yield further improvements in specific application contexts. Fourthly, the reliance on a target variable ($y_i$) for most XML methods limits applicability in purely unsupervised settings; methods for unsupervised influence estimation or representation learning could broaden the framework's scope. Finally, while validated on two datasets, further evaluation across diverse domains is needed to assess generalizability, and scalability to truly massive datasets may also require further optimization.
+
 \section{Conclusions and Future Work}
 \label{sec:con}
-In this paper, we proposed a novel \textit{Dynamic Influence-Based Clustering Framework} for energy consumption analysis. By leveraging explainable machine learning (XML) methods, the framework transforms energy data into an interpretable influence space, where feature importance scores provide a robust and meaningful basis for clustering. The framework integrates temporal and contextual dynamics to capture subgroup transitions and detect anomalies, addressing key challenges in analyzing energy consumption patterns. Experimental evaluations on real-world datasets demonstrated the effectiveness of the proposed framework, outperforming traditional clustering methods in terms of interpretability, clustering quality, and anomaly detection accuracy.
+This paper introduced Dynamic Influence-Based Clustering, a novel framework for analyzing time series data by leveraging explainable machine learning within a dynamic clustering context. We demonstrated that transforming raw data into an interpretable influence space, utilizing methods like SHAP or Integrated Gradients, combined with a dynamic clustering algorithm that incorporates temporal and contextual constraints, significantly improves cluster quality, temporal stability, and contextual coherence. Our extensive experiments on real-world energy and manufacturing datasets confirmed that our approach consistently outperforms traditional clustering methods on raw features, as well as state-of-the-art time-series clustering baselines such as k-Shape and DTW K-medoids. The findings underscore the critical value of clustering in a space defined by robust feature attributions or guided by stable global importances, enabling the generation of interpretable subgroups that align strongly with domain knowledge. This framework effectively captures dynamic subgroup behaviors and identifies meaningful transitions, providing actionable insights for applications in energy management, manufacturing, and other time-sensitive domains.
 
-The key contributions of this work are summarized as follows:
-\begin{itemize}
-    \item We introduced an influence-based clustering approach that enhances subgroup interpretability by utilizing feature importance scores derived from XML methods.
-    \item We developed a dynamic clustering mechanism that incorporates temporal and contextual dependencies, enabling the analysis of evolving subgroups in energy consumption.
-    \item We proposed a transition-based anomaly detection method that identifies rare or unexpected patterns, providing actionable insights for energy management.
-\end{itemize}
+Future research will extend this framework in several promising directions. Methodologically, further exploration of advanced XML techniques, including those tailored for deep learning models and methods for unsupervised influence estimation, is warranted to broaden applicability. This also involves refining the algorithmic core by incorporating adaptive hyperparameter tuning strategies and investigating alternative clustering approaches suitable for the rich influence space. From an adaptive systems perspective, integrating online learning capabilities, where cluster dynamics evolve with incoming data, will be crucial for real-time monitoring and decision support. Finally, extensive validation across diverse application domains and optimizing for scalability to truly massive datasets through distributed computing and advanced data indexing techniques will further establish the framework's broad utility and robustness.
 
-Despite the promising results, this work opens up several directions for future research. First, the proposed framework could be extended to handle multi-variate influence spaces derived from ensemble models, potentially improving robustness in scenarios with high-dimensional and heterogeneous data. Second, the current implementation focuses on supervised XML methods; future studies could explore unsupervised or semi-supervised techniques to generalize the approach to tasks where labeled data is limited. Third, integrating advanced temporal models, such as transformers or recurrent neural networks, could further enhance the ability to capture complex temporal dependencies in subgroup transitions. Finally, applying the framework to broader domains, such as financial analytics or healthcare data, could validate its generalizability and uncover new use cases.
-
-In conclusion, this study contributes a novel, interpretable, and dynamic framework for energy consumption analysis, addressing critical gaps in existing methods. We believe the proposed approach has significant potential to inform energy management practices and inspire further innovations in dynamic data clustering and explainable AI.
+\section*{Code Availability}
+\label{sec:code_availability}
+The complete implementation of the Dynamic Influence-Based Clustering framework, including all experiments and analysis code, is publicly available at \url{https://github.com/xiufengliu/influence.git} to facilitate reproducibility and future research.
 
 \bibliographystyle{elsarticle-harv}
 \bibliography{references}

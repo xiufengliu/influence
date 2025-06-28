@@ -1,255 +1,281 @@
 # Dynamic Influence-Based Clustering Framework
 
-This project implements the Dynamic Influence-Based Clustering Framework for energy consumption analysis as described in the paper. The framework transforms raw energy consumption data into an influence space using explainable machine learning (XML) methods, performs clustering in this space, and analyzes temporal transitions between clusters.
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Overview
+A comprehensive Python framework for dynamic clustering with influence analysis, designed for interpretable analysis of complex time-series data. This framework combines advanced clustering algorithms with influence function analysis to provide insights into how data points affect clustering decisions over time.
 
-Energy consumption patterns are inherently dynamic, influenced by temporal, contextual, and behavioral factors. Traditional clustering approaches rely on static representations of raw data, often failing to capture the evolving relationships between features and their impact on energy usage. This framework addresses these limitations by:
+## 🚀 Features
 
-1. Transforming raw data into an influence space derived from feature importance explanations
-2. Performing clustering in this influence space to discover interpretable subgroups
-3. Analyzing temporal transitions to track subgroup evolution over time
-4. Detecting anomalies in consumption patterns
+- **Dynamic Clustering**: Adaptive clustering algorithms that handle evolving data patterns
+- **Multiple Influence Methods**: SHAP, LIME, Integrated Gradients, Hessian-based, and Spearman influence analysis
+- **Temporal Analysis**: Built-in tools for analyzing clustering evolution and transitions over time
+- **Comprehensive Evaluation**: Multiple metrics for clustering quality, contextual coherence, and temporal stability
+- **Flexible Architecture**: Modular design supporting custom clustering algorithms and influence methods
+- **Scalable Implementation**: Efficient algorithms with parallel processing support
 
-## Features
+## 📦 Installation
 
-- **Influence Space Transformation**: Convert raw features to influence representations using SHAP, LIME, or Spearman methods
-- **Dynamic Clustering**: Perform clustering with temporal and contextual constraints
-- **Transition Analysis**: Track cluster evolution over time using Markov chain models
-- **Anomaly Detection**: Identify rare or unexpected transitions in consumption patterns
-- **Visualization**: Visualize clusters, transitions, and temporal evolution in PDF format for publication-ready figures
+### Prerequisites
 
-## Installation
+- Python 3.8 or higher
+- pip package manager
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/your-github-username/dynamic-influence-clustering.git
-   cd dynamic-influence-clustering
-   ```
+### Quick Install
 
-2. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
+```bash
+# Clone the repository
+git clone <repository-url>
+cd influence
 
-## Usage
+# Install dependencies
+pip install -r requirements.txt
+
+# Verify installation
+python setup_verification.py
+```
+
+### Optional Dependencies
+
+For enhanced time-series analysis:
+```bash
+pip install tslearn>=0.5.2
+```
+
+## 🏃 Quick Start
 
 ### Basic Usage
 
-Run the framework with default settings:
+```python
+from src.preprocessing.data_loader import DataLoader
+from src.preprocessing.preprocessor import Preprocessor
+from src.models.gradient_boost import GradientBoostModel
+from src.influence.shap_influence import ShapInfluence
+from src.clustering.dynamic_kmeans import DynamicKMeansClustering
 
-```bash
-python main.py --dataset industrial_site1 --influence shap --clustering kmeans
+# Load and preprocess data
+loader = DataLoader("your_dataset")
+data = loader.load_data()
+
+preprocessor = Preprocessor()
+X, y, timestamps, contexts = preprocessor.process_data(data)
+
+# Train predictive model
+model = GradientBoostModel()
+model.fit(X, y)
+
+# Generate influence representations
+influence_extractor = ShapInfluence(model)
+influence_vectors = influence_extractor.compute_influence(X)
+
+# Perform dynamic clustering
+clustering = DynamicKMeansClustering(
+    n_clusters=3,
+    alpha=1.0,  # cohesion weight
+    beta=1.0,   # temporal weight
+    gamma=1.0   # contextual weight
+)
+cluster_labels = clustering.fit_predict(influence_vectors, timestamps, contexts)
 ```
 
-### TNNLS Experiments
+### Quick Demo
 
-Run comprehensive experiments for TNNLS submission using the sequential approach (recommended):
-
-```bash
-python test_tnnls_sequential.py
-```
-
-This script runs experiments one influence method at a time to minimize memory usage. You can also specify a single influence method:
+Try the framework with example data:
 
 ```bash
-python test_tnnls_sequential.py spearman  # Run only with Spearman influence (fastest)
-python test_tnnls_sequential.py lime      # Run only with LIME influence
-python test_tnnls_sequential.py shap      # Run only with SHAP influence (most memory-intensive)
+# Run complete demo with synthetic data
+python demo.py
+
+# Run experiment with your data
+python run_experiments.py --dataset your_data.csv --influence shap
+
+# Compare multiple influence methods
+python run_experiments.py --dataset your_data.csv --compare_all
 ```
 
-For a more focused approach with only Spearman influence method:
+## 🔧 Configuration
+
+### Command Line Interface
 
 ```bash
-python test_tnnls_spearman_only.py
+python main.py --dataset energy_data --influence shap --clustering dynamic_kmeans --n_clusters 5
 ```
 
-### Command Line Arguments for Main Script
+### Available Options
 
-- `--dataset`: Dataset to use (building_genome, industrial_site1, industrial_site2, industrial_site3, energy_data, steel_industry)
-- `--influence`: Influence method (shap, lime, spearman)
-- `--clustering`: Clustering algorithm (kmeans, hierarchical, spectral)
-- `--n_clusters`: Number of clusters (default: 3)
-- `--output_dir`: Directory to save results (default: data/results/{dataset})
+- `--dataset`: Dataset to analyze
+- `--influence`: Influence method (shap, lime, integrated_gradients, hessian, spearman)
+- `--clustering`: Clustering algorithm (dynamic_kmeans, hierarchical, spectral)
+- `--n_clusters`: Number of clusters
+- `--output_dir`: Results directory
 
-### Command Line Arguments for TNNLS Experiments
+## 🏗️ Framework Components
 
-- `--datasets`: Datasets to use for experiments (default: energy_data, steel_industry)
-- `--experiments`: Experiments to run (default: all experiments)
-- `--influence_methods`: Influence methods to evaluate (default: shap, lime, spearman)
-- `--clustering_algorithms`: Clustering algorithms to evaluate (default: kmeans, hierarchical, spectral)
-- `--n_clusters_list`: Number of clusters to evaluate (default: 3, 5, 7)
-- `--output_dir`: Directory to save results (default: data/results/tnnls_experiments)
-- `--random_seeds`: Random seeds for reproducibility (default: 42, 123, 456, 789, 101112)
-- `--n_jobs`: Number of parallel jobs (default: -1, use all available cores)
-- `--verbose`: Enable verbose output (default: True)
+### 1. Clustering Algorithms
 
-### Examples
+- **Dynamic K-Means**: Adaptive K-means with temporal and contextual constraints
+- **Hierarchical Clustering**: Agglomerative clustering with various linkage criteria
+- **Spectral Clustering**: Graph-based clustering for complex pattern detection
+- **Time-Series Baselines**: Specialized algorithms for temporal data (k-Shape, DTW-based)
 
-```bash
-# Run main script
-python main.py --dataset building_genome --influence shap --clustering kmeans --n_clusters 5 --output_dir results/building_genome_shap_kmeans
+### 2. Influence Methods
 
-# Run TNNLS experiments sequentially (recommended approach)
-python test_tnnls_sequential.py
+- **SHAP**: Shapley value-based feature importance analysis
+- **LIME**: Local interpretable model-agnostic explanations
+- **Integrated Gradients**: Path-integrated attribution method
+- **Hessian Influence**: Second-order gradient-based influence functions
+- **Spearman Influence**: Rank correlation-based influence analysis
 
-# Run TNNLS experiments with only Spearman influence method
-python test_tnnls_sequential.py spearman
+### 3. Evaluation Framework
 
-# Run TNNLS experiments with only Spearman influence method (alternative script)
-python test_tnnls_spearman_only.py
+- **Clustering Quality**: Silhouette score, Davies-Bouldin index, Calinski-Harabasz index
+- **Contextual Coherence**: Domain-specific alignment measures
+- **Temporal Analysis**: Transition matrices, stability metrics, anomaly detection
 
-# Run minimal test with only essential experiments
-python test_tnnls_minimal.py
-```
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 influence/
-├── data/
-│   ├── raw/                  # Raw energy consumption datasets
-│   ├── processed/            # Preprocessed datasets
-│   └── results/              # Results from experiments
-├── src/
-│   ├── preprocessing/        # Data preprocessing modules
-│   ├── models/               # Predictive models
-│   ├── influence/            # Influence space transformation
+├── src/                      # Core framework code
 │   ├── clustering/           # Clustering algorithms
-│   ├── temporal/             # Temporal analysis
-│   └── utils/                # Utility functions
-├── experiments/              # Experiment scripts
-│   └── tnnls/                # TNNLS-quality experiments
-│       ├── ablation_studies/     # Ablation studies
-│       ├── case_studies/         # Case studies
-│       ├── clustering_quality/   # Clustering quality evaluation
-│       ├── computational_analysis/ # Computational analysis
-│       ├── contextual_coherence/ # Contextual coherence assessment
-│       └── temporal_analysis/    # Temporal pattern analysis
-├── notebooks/                # Jupyter notebooks for analysis
+│   │   ├── dynamic_kmeans.py
+│   │   ├── hierarchical.py
+│   │   ├── spectral.py
+│   │   └── timeseries_baselines.py
+│   ├── influence/            # Influence function implementations
+│   │   ├── shap_influence.py
+│   │   ├── lime_influence.py
+│   │   ├── integrated_gradients_influence.py
+│   │   ├── hessian_influence.py
+│   │   └── spearman_influence.py
+│   ├── models/               # Machine learning models
+│   ├── preprocessing/        # Data preprocessing utilities
+│   ├── temporal/             # Temporal analysis tools
+│   └── utils/                # Utilities and helpers
+├── examples/                 # Example scripts and advanced usage
 ├── tests/                    # Unit tests
-├── main.py                   # Main entry point
-├── run_tnnls_experiments.py  # Script for TNNLS experiments
+├── notebooks/                # Jupyter notebooks for exploration
 ├── config.py                 # Configuration settings
-├── requirements.txt          # Project dependencies
-└── README.md                 # Project documentation
+├── main.py                   # Main execution script
+├── run_experiments.py        # Simple experiment runner
+└── demo.py                   # Quick demonstration script
 ```
 
-## Core Components
+## 💾 Data Format Requirements
 
-### 1. Data Preprocessing
+The framework expects CSV data with the following structure:
 
-The framework includes utilities for loading and preprocessing energy consumption data, handling missing values, normalizing features, and aligning temporal data.
+```csv
+timestamp,feature1,feature2,feature3,target
+2023-01-01,1.2,3.4,5.6,100.5
+2023-01-02,1.3,3.2,5.8,102.1
+2023-01-03,1.1,3.6,5.4,98.9
+...
+```
 
-### 2. Predictive Modeling
+Required columns:
+- **timestamp**: Time index (datetime or sequence number)
+- **features**: Numerical feature columns
+- **target**: Target variable for predictive modeling (optional)
 
-Gradient boosting models are used to predict energy consumption based on input features. These models serve as the foundation for generating influence scores.
+## 🔬 Advanced Usage
 
-### 3. Influence Space Transformation
+### Custom Clustering Algorithms
 
-Three methods are implemented for generating influence scores:
-- **SHAP**: Uses Shapley values to quantify feature contributions
-- **LIME**: Uses local interpretable model-agnostic explanations
-- **Spearman**: Uses Spearman rank correlation coefficients
+Extend the base clustering class:
 
-### 4. Dynamic Clustering
+```python
+from src.clustering.base_clustering import BaseClustering
 
-The framework supports three clustering algorithms:
-- **K-means**: Centroid-based clustering
-- **Hierarchical**: Agglomerative clustering with various linkage criteria
-- **Spectral**: Graph-based clustering for complex patterns
+class CustomClustering(BaseClustering):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+    def fit_predict(self, X, timestamps=None, contexts=None):
+        # Implement your clustering logic
+        return cluster_labels
+```
 
-### 5. Transition Analysis
+### Custom Influence Methods
 
-Markov chain models are used to analyze cluster transitions over time, providing insights into pattern evolution and stability.
+Implement custom influence functions:
 
-### 6. Anomaly Detection
+```python
+from src.influence.base_influence import BaseInfluence
 
-The framework can identify anomalous transitions between clusters, which may indicate unusual energy consumption patterns.
-
-## Extending the Framework
+class CustomInfluence(BaseInfluence):
+    def compute_influence(self, X, model=None):
+        # Implement your influence computation
+        return influence_scores
+```
 
 ### Adding New Datasets
 
-1. Place your dataset in the `data/raw/` directory
-2. Implement a custom data loader in `src/preprocessing/data_loader.py`
-3. Add preprocessing logic in `src/preprocessing/preprocessor.py`
+1. Place dataset in `data/raw/` directory
+2. Implement data loader in `src/preprocessing/data_loader.py`
+3. Add preprocessing logic if needed
 
-### Adding New Influence Methods
+## ⚡ Performance Optimization
 
-1. Create a new class in the `src/influence/` directory
-2. Implement the `generate_influence()` method
-3. Update `main.py` to include the new method
+### Memory Management
+- Use batch processing for large datasets
+- Enable parallel processing with `n_jobs` parameter
+- Monitor memory usage with influence methods
 
-### Adding New Clustering Algorithms
+### Computational Efficiency
+- Start with Spearman influence method (fastest)
+- Use GPU acceleration where available
+- Consider data sampling for initial exploration
 
-1. Create a new class in the `src/clustering/` directory that extends `BaseClustering`
-2. Implement the required methods: `fit()` and `predict()`
-3. Update `main.py` to include the new algorithm
+## 🧪 Testing
 
-## Memory Management and Troubleshooting
-
-### Memory Optimization
-
-The TNNLS experiments can be memory-intensive, especially when using SHAP and LIME influence methods. To avoid memory issues:
-
-1. Use the sequential approach with `test_tnnls_sequential.py` which runs one influence method at a time
-2. Start with Spearman influence method which is the least memory-intensive
-3. Reduce the number of parallel jobs (the sequential script uses only 1 job)
-4. Run experiments one by one rather than all at once
-
-### Common Issues and Solutions
-
-1. **Out of Memory Errors**:
-   - Use `test_tnnls_sequential.py` instead of running all experiments at once
-   - Run with only Spearman influence: `python test_tnnls_sequential.py spearman`
-   - Reduce the number of datasets or experiments
-
-2. **Hanging Processes**:
-   - This usually indicates memory pressure. Kill the process and try with fewer parallel jobs
-   - Use the sequential approach with one influence method at a time
-
-3. **Transition Matrix Visualization Errors**:
-   - These are handled automatically in the latest version by skipping single-cluster cases
-
-4. **Parameter Name Mismatches**:
-   - These have been fixed in the latest version
-
-## Contributing and Development
-
-### Cleaning the Project
-
-Before pushing your code to GitHub, you can use the provided cleaning script to remove temporary files, Python cache files, and other artifacts:
+Run the test suite:
 
 ```bash
-./clean_project.sh
+# Run all tests
+python -m pytest tests/
+
+# Run specific test module
+python -m pytest tests/test_framework.py
+
+# Check installation
+python setup_verification.py
 ```
 
-This script will:
-- Remove Python cache files (`__pycache__`, `.pyc`, etc.)
-- Remove Jupyter notebook checkpoints
-- Remove IDE-specific files
-- Remove log files
-- Clean the results directory
-- Check for large files that might need to be handled with Git LFS
+## 🤝 Contributing
 
-### Code Style
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Code style guidelines
+- Testing requirements
+- Pull request process
+- Development setup
 
-This project follows PEP 8 style guidelines. You can use tools like `flake8` and `black` to ensure your code adheres to these standards.
+## 📄 License
 
-## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 🆘 Support & Troubleshooting
 
-## Citation
+### Common Issues
 
-If you use this framework in your research, please cite the original paper:
+1. **Memory Issues**: Use smaller batch sizes or sequential processing
+2. **Import Errors**: Verify all dependencies are installed
+3. **Performance**: Start with simpler influence methods
 
-```
-@article{dynamic_influence_clustering,
-  title={Dynamic Influence-Based Clustering for Energy Consumption Analysis: A Framework for Subgroup Discovery and Transition Detection},
-  author={Ma, Rongfei and Liu, Xiufeng},
-  journal={Sustainable Cities and Society},
-  year={2023}
-}
-```
+### Getting Help
+
+- Check the `examples/` directory for usage patterns
+- Review `notebooks/` for detailed analysis examples
+- Open an issue for bugs or feature requests
+
+## 📈 Roadmap
+
+- [ ] Additional influence methods
+- [ ] Enhanced visualization tools
+- [ ] Real-time clustering support
+- [ ] Cloud deployment options
+- [ ] API interface development
+
+---
+
+**Built with ❤️ for interpretable machine learning and dynamic data analysis**

@@ -38,6 +38,9 @@ def setup_logger(name, level=None, log_file=None):
     # Create logger
     logger = logging.getLogger(name)
     logger.setLevel(level)
+
+    # Ensure the root logger also has the correct level
+    logging.getLogger().setLevel(level)
     
     # Remove existing handlers
     for handler in logger.handlers[:]:
@@ -49,6 +52,8 @@ def setup_logger(name, level=None, log_file=None):
     # Create console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(level)
+    # Ensure messages are propagated to the root logger
+    logger.propagate = True
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
     

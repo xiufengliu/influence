@@ -27,6 +27,11 @@ var/
 venv/
 ENV/
 
+# Exclude data and paper folders for open source release
+data/
+paper/
+notebooks/
+
 # IDE files
 .idea/
 .vscode/
